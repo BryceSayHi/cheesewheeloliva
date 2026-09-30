@@ -35,12 +35,6 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 @keyframes bl{50%{opacity:.2}}
 #battle{display:none;position:absolute;left:0;right:0;bottom:0;height:40%;background:var(--bg);text-align:center}
 #cv{width:min(100%,66vh);height:auto;touch-action:none}
-#score{display:none;position:absolute;z-index:3;top:6px;left:0;right:0;text-align:center;color:#ff0;font-size:1.1rem;letter-spacing:1px;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
-#score.pop{animation:pop .5s}
-@keyframes pop{40%{transform:scale(1.35);color:#fff}}
-#stage.endless #bubble{top:34px}
-#blackout{position:absolute;z-index:4;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s}
-#blackout.on{opacity:1;pointer-events:auto}
 </style>
 </head>
 <body>
@@ -50,14 +44,12 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <div id="choices"></div>
 <div id="dlg"><div id="name"></div><p id="txt"></p><div id="bm"></div><span id="more">▼</span></div>
 <div id="battle"><canvas id="cv" width="360" height="215"></canvas></div>
-<div id="score"></div>
-<div id="blackout"></div>
 </div>
 <script>
 document.fonts.load('16px CustomFont');
 const IMG={normal:'image/frank_normal.avif',talk1:'image/frank_talk1.avif',talk2:'image/frank_talk2.avif',taunt:'image/frank_taunt.avif',ref:'image/frank_sans.avif'};
 const $=id=>document.getElementById(id);
-const BOOM='gif/explode.gif';
+const BOOM='gifs/explode.gif';
 const HEART=new Image(),ROCK=new Image();HEART.src='image/heart.avif';ROCK.src='image/rock.avif';
 const BTN={fight:'image/fight.avif',heal:'image/heal.avif'};
 const SND=new Audio('audio/talk.aac');SND.preload='auto';let unlocked=false;
@@ -65,7 +57,7 @@ function unlock(){if(unlocked)return;unlocked=true;SND.load();}
 ['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,unlock,{passive:true}));
 function blip(ch){if(!unlocked||!ch||/\s/.test(ch))return;try{const a=SND.cloneNode();a.volume=.5;a.play().catch(()=>{});}catch(e){}}
 const SEQ=['normal','talk1','talk2','talk1'];
-let cont=null,asked,typing=false,fin=null,ty=null,tk=null,endless=false,score=0;
+let cont=null,asked,typing=false,fin=null,ty=null,tk=null;
 function setSprite(k){$('sprite').src=IMG[k];}
 function clr(){clearInterval(ty);clearInterval(tk);typing=false;}
 function say(who,text,next,sd){sd=sd||30;clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent=who;$('name').style.display=who?'block':'none';$('txt').textContent='';$('choices').innerHTML='';$('more').style.display='none';cont=null;
@@ -80,18 +72,7 @@ function hub(){const o=Q.map((q,i)=>[(asked.has(i)?'✔ ':'')+q[0],()=>ask(i)]);
 function ask(i){asked.add(i);say('Frank',Q[i][1],hub);}
 function fight(){say('Frank','You dare?! Fine. Dodge THIS!',()=>say('Al','*grips accordion*\n(Arrows/WASD or drag to dodge. Tap/Space to strike, then heal with gabagool!)',startBattle));}
 function nameQ(){choose('(What do you say?)',[['Tell him your real name',()=>say('Al','It is Al.',()=>say('Frank','Hmmm. Well, my name is Frank Oliva.\nNow, what do you want?',hub))],["I ain't tellin you my name",()=>say('Al',"I ain't tellin you my name.",()=>say('Frank',"Okay, then I'll just call you Yucky Hobo Man.\nNow, what do you want?",hub))]]);}
-function start(){asked=new Set();endless=false;$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('','You stroll down a road with your accordion.\nA figure blocks the way...',()=>say('Frank','Well, well, well. An accordion player.\nIs that... a spicy chicken sandwich in your bag?',sandwichQ));}
-function sandwichQ(){choose('(Give Frank your spicy chicken sandwich?)',[['Yes, give him the sandwich',()=>say('Al','Here. One spicy chicken sandwich.',()=>say('Frank','Mmm... SPICY. You are alright, stranger.\nWhat is your name?',nameQ))],["No. It's mine.",()=>say('Al',"No. It's my sandwich.",()=>say('Frank','WRONG ANSWER.\nNow you polka... FOREVER!',()=>say('Al','*grips accordion*\n(Arrows/WASD or drag to dodge. Tap/Space to strike, then heal with gabagool!)',startEndless))),true]]);}
-
-// ---- ENDLESS MODE ----
-const HS_KEY='frank_hs';
-function loadScore(){let c=0,l=0;try{const m=document.cookie.match(new RegExp('(?:^|; )'+HS_KEY+'=(\\d+)'));if(m)c=+m[1];}catch(e){}try{l=parseInt(localStorage.getItem(HS_KEY),10)||0;}catch(e){}return Math.max(c,l);}
-function saveScore(){try{document.cookie=HS_KEY+'='+score+'; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(HS_KEY,score);}catch(e){}}
-function showScore(pop){const e=$('score');e.textContent='HIGH SCORE: '+score;e.style.display='block';e.classList.remove('pop');if(pop){void e.offsetWidth;e.classList.add('pop');}}
-function startEndless(){endless=true;score=loadScore();$('stage').classList.add('endless');showScore(false);startBattle();}
-function blackout(){$('dlg').style.display='none';$('blackout').classList.add('on');
- setTimeout(()=>{const t="I'm not done yet...";say('Frank',t,null,70);setTimeout(revive,t.length*70+1400);},900);}
-function revive(){const s=$('sprite');s.classList.remove('spin','big','shake');s.style.display='';$('blackout').classList.remove('on');showScore(true);startBattle();}
+function start(){asked=new Set();const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('','You stroll down a road with your accordion.\nA figure blocks the way...',()=>say('Frank','Well, well, well. An accordion player.\nWhat is your name, stranger?',nameQ));}
 
 // ---- BOSS BATTLE ----
 const cv=$('cv'),g=cv.getContext('2d'),W=360,AX=80,AY=50,AW=200,AH=150;
@@ -111,10 +92,10 @@ function goHeal(){if(st!=='menu')return;itemsUI('');}
 function eat(){if(st!=='items'||gab<=0||php>=PMAX)return;gab--;const o=php;php=Math.min(PMAX,php+30);itemsUI('+'+(php-o)+' HP!');}
 function nextRound(){st='talk';tm=0;bl=[];sp=0;hx=AX+AW/2;hy=AY+AH/2;}
 function endBattle(){run=false;$('bubble').style.display='none';$('battle').style.display='none';$('sprite').classList.remove('bt');setSprite('normal');}
-function win(){endBattle();if(endless){score++;saveScore();}say('Frank','Noooo, not the polk—',death,60);}
+function win(){endBattle();say('Frank','Noooo, not the polk—',death,60);}
 function death(){$('dlg').style.display='none';const s=$('sprite');setSprite('taunt');s.classList.add('spin');let bi;
  setTimeout(()=>{s.classList.remove('spin');s.classList.add('big');let n=0;s.src=BOOM+'?'+Date.now();bi=null;},1600);
- setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',()=>say('','— THE END —  (click to replay)',start,60),60);},2400);}
+ setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',()=>say('','— THE END —  (click to replay)',start,60),60);},2400);}
 function lose(){endBattle();say('Frank','Ha! Is that all? Try again.',()=>say('Al','(One more time...)',startBattle));}
 function strike(){if(st!=='bar')return;dmg=Math.round(12+38*(1-Math.abs(mk-.5)*2));bhp-=dmg;st='hit';tm=0;const s=$('sprite');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake');}
 function spawn(dt){const m=Math.min(1.8,1+.12*rnd_),p=rnd_%7;sp+=dt;
