@@ -41,6 +41,15 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #stage.endless #bubble{top:34px}
 #blackout{position:absolute;z-index:4;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s}
 #blackout.on{opacity:1;pointer-events:auto}
+#menu{position:absolute;z-index:6;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;padding:min(16vh,120px) 16px 0;box-sizing:border-box;background:#000 url(image/TS_BG.avif) center/cover no-repeat;image-rendering:pixelated}
+#menu h1{margin:0 0 min(9vh,64px);font:inherit;font-size:clamp(2.4rem,11vw,4rem);font-weight:normal;line-height:1.1;text-align:center;padding:6px 32px;border:18px solid transparent;border-image:url(image/text_box.avif) 6 stretch;background:var(--bg)}
+#menu button{display:block;font:inherit;font-size:1.15rem;padding:4px 14px;margin-bottom:14px;border:12px solid transparent;border-image:url(image/choice_box.avif) 6 stretch;image-rendering:pixelated;background:var(--bg);color:var(--fg);cursor:pointer}
+#menu button:hover,#menu button:focus-visible{background:#222;outline:none}
+#mm,#warn{display:flex;flex-direction:column;align-items:center;max-width:100%}
+#warn{display:none}
+#warn p{margin:0 0 24px;box-sizing:border-box;max-width:min(520px,100%);text-align:center;font-size:1.15rem;line-height:1.4;padding:10px 14px;border:18px solid transparent;border-image:url(image/text_box.avif) 6 stretch;background:var(--bg)}
+#warn button{max-width:100%}
+#menu button.evil{border-image-source:url(image/choice_box2.avif);color:var(--accent)}
 </style>
 </head>
 <body>
@@ -52,6 +61,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <div id="battle"><canvas id="cv" width="360" height="215"></canvas></div>
 <div id="score"></div>
 <div id="blackout"></div>
+<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div></div>
 </div>
 <script>
 document.fonts.load('16px CustomFont');
@@ -80,8 +90,21 @@ function hub(){const o=Q.map((q,i)=>[(asked.has(i)?'✔ ':'')+q[0],()=>ask(i)]);
 function ask(i){asked.add(i);say('Frank',Q[i][1],hub);}
 function fight(){say('Frank','You dare?! Fine. Dodge THIS!',()=>say('Al','*grips accordion*\n(Arrows/WASD or drag to dodge. Tap/Space to strike, then heal with gabagool!)',startBattle));}
 function nameQ(){choose('(What do you say?)',[['Tell him your real name',()=>say('Al','It is Al.',()=>say('Frank','Hmmm. Well, my name is Frank Oliva.\nNow, what do you want?',hub))],["I ain't tellin you my name",()=>say('Al',"I ain't tellin you my name.",()=>say('Frank',"Okay, then I'll just call you Yucky Hobo Man.\nNow, what do you want?",hub))]]);}
-function start(){asked=new Set();endless=false;$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('','You stroll down a road with your accordion.\nA figure blocks the way...',()=>say('Frank','Well, well, well. An accordion player.\nIs that... a spicy chicken sandwich in your bag?',sandwichQ));}
-function sandwichQ(){choose('(Give Frank your spicy chicken sandwich?)',[['Yes, give him the sandwich',()=>say('Al','Here. One spicy chicken sandwich.',()=>say('Frank','Mmm... SPICY. You are alright, stranger.\nWhat is your name?',nameQ))],["No. It's mine.",()=>say('Al',"No. It's my sandwich.",()=>say('Frank','WRONG ANSWER.\nNow you polka... FOREVER!',()=>say('Al','*grips accordion*\n(Arrows/WASD or drag to dodge. Tap/Space to strike, then heal with gabagool!)',startEndless))),true]]);}
+function start(){asked=new Set();endless=false;$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('','You stroll down a road with your accordion.\nA figure blocks the way...',()=>say('Frank','Well, well, well. An accordion player.\nWhat is your name, stranger?',nameQ));}
+function frankReturns(){const s=$('sprite');s.classList.remove('spin','big','shake','bt');s.style.display='';setSprite('normal');say('Frank','...As I lay here dying...\nCan I at least have your spicy chicken sandwich?',sandwichQ);}
+function sandwichQ(){choose('(Give Frank your spicy chicken sandwich?)',[['Yes, give him the sandwich',()=>say('Al','Here. One spicy chicken sandwich.',()=>say('Frank','Mmm... SPICY. Thank you, stranger.\nNow I can die in peace...',()=>{$('sprite').style.display='none';say('','— THE END —  (click to replay)',start,60);}))],["No. It's mine.",()=>say('Al',"No. It's my sandwich.",()=>say('Frank','WRONG ANSWER.\nNow you polka... FOREVER!',()=>say('Al','*grips accordion*\n(Arrows/WASD or drag to dodge. Tap/Space to strike, then heal with gabagool!)',startEndless))),true]]);}
+
+// ---- MAIN MENU ----
+const BEAT_KEY='frank_beat';
+function hasBeaten(){let c=false,l=false;try{c=new RegExp('(?:^|; )'+BEAT_KEY+'=1').test(document.cookie);}catch(e){}try{l=localStorage.getItem(BEAT_KEY)==='1';}catch(e){}return c||l;}
+function markBeaten(){try{document.cookie=BEAT_KEY+'=1; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(BEAT_KEY,'1');}catch(e){}}
+function showWarn(on){$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';}
+function openMain(){showWarn(false);$('menu').style.display='flex';}
+function closeMain(){showWarn(false);$('menu').style.display='none';}
+$('playBtn').onclick=()=>{closeMain();start();};
+$('hdBtn').onclick=()=>{if(hasBeaten()){closeMain();startEndless();}else showWarn(true);};
+$('warnOk').onclick=()=>{closeMain();start();};
+$('warnNo').onclick=()=>{closeMain();startEndless();};
 
 // ---- ENDLESS MODE ----
 const HS_KEY='frank_hs';
@@ -111,10 +134,10 @@ function goHeal(){if(st!=='menu')return;itemsUI('');}
 function eat(){if(st!=='items'||gab<=0||php>=PMAX)return;gab--;const o=php;php=Math.min(PMAX,php+30);itemsUI('+'+(php-o)+' HP!');}
 function nextRound(){st='talk';tm=0;bl=[];sp=0;hx=AX+AW/2;hy=AY+AH/2;}
 function endBattle(){run=false;$('bubble').style.display='none';$('battle').style.display='none';$('sprite').classList.remove('bt');setSprite('normal');}
-function win(){endBattle();if(endless){score++;saveScore();}say('Frank','Noooo, not the polk—',death,60);}
+function win(){endBattle();if(endless){score++;saveScore();}else markBeaten();say('Frank','Noooo, not the polk—',death,60);}
 function death(){$('dlg').style.display='none';const s=$('sprite');setSprite('taunt');s.classList.add('spin');let bi;
  setTimeout(()=>{s.classList.remove('spin');s.classList.add('big');let n=0;s.src=BOOM+'?'+Date.now();bi=null;},1600);
- setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',()=>say('','— THE END —  (click to replay)',start,60),60);},2400);}
+ setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',frankReturns,60);},2400);}
 function lose(){endBattle();say('Frank','Ha! Is that all? Try again.',()=>say('Al','(One more time...)',startBattle));}
 function strike(){if(st!=='bar')return;dmg=Math.round(12+38*(1-Math.abs(mk-.5)*2));bhp-=dmg;st='hit';tm=0;const s=$('sprite');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake');}
 function spawn(dt){const m=Math.min(1.8,1+.12*rnd_),p=rnd_%7;sp+=dt;
@@ -157,7 +180,11 @@ addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0;});
 cv.addEventListener('pointerdown',e=>{if(st==='bar')strike();drag={x:e.clientX,y:e.clientY};});
 addEventListener('pointerup',()=>drag=null);
 cv.addEventListener('pointermove',e=>{if(!drag||st!=='dodge')return;const k=W/cv.clientWidth;hx+=(e.clientX-drag.x)*k;hy+=(e.clientY-drag.y)*k;drag={x:e.clientX,y:e.clientY};});
-start();
+// ---- DEBUG: press F three times fast -> fight Frank at 1 HP ----
+let fT=[];
+function debugFight(){clr();closeMain();$('blackout').classList.remove('on');$('choices').innerHTML='';const s=$('sprite');s.classList.remove('spin','big','shake');s.style.display='';startBattle();bhp=1;}
+addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;const n=performance.now();fT=fT.filter(t=>n-t<900);fT.push(n);if(fT.length>=3){fT=[];debugFight();}});
+openMain();
 </script>
 </body>
 </html>
