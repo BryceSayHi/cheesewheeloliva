@@ -71,7 +71,7 @@ function start(){asked=new Set();const s=$('sprite');s.classList.remove('spin','
 // ---- BOSS BATTLE ----
 const cv=$('cv'),g=cv.getContext('2d'),W=360,AX=80,AY=50,AW=200,AH=150;
 const TAUNTS=["Feel my cloudy wrath!","You call that polka?!","My cape is fireproof!","Stop being so cheerful!","Nobody polkas on my road!","This cape is dry clean only!","Is that an accordion or a sandwich?"];
-const BMAX=600,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},drag=null;
+const BMAX=300,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},drag=null;
 const R=Math.random;
 function startBattle(){clr();$('dlg').style.display='none';$('battle').style.display='block';$('sprite').classList.add('bt');setSprite('ref');php=PMAX;bhp=BMAX;gab=5;inv=0;resize();rnd_=0;tauntT=0;nextRound();if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
 function resize(){const k=Math.max(1,cv.clientWidth/W*(window.devicePixelRatio||1));const w=Math.round(W*k);if(cv.width!==w){cv.width=w;cv.height=Math.round(215*k);}sc=cv.width/W;}
