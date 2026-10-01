@@ -42,9 +42,10 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #battle{display:none;position:absolute;left:0;right:0;bottom:0;height:40%;background:var(--bg);text-align:center}
 #cv{width:min(100%,66vh);height:auto;touch-action:none}
 #score{display:none;position:absolute;z-index:3;top:6px;left:0;right:0;text-align:center;color:#ff0;font-size:1.1rem;letter-spacing:1px;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
+#score .spd{font-size:.8rem;color:#8cf;letter-spacing:1px;margin-top:2px}
 #score.pop{animation:pop .5s}
 @keyframes pop{40%{transform:scale(1.35);color:#fff}}
-#stage.endless #bubble{top:34px}
+#stage.endless #bubble{top:58px}
 #blackout{position:absolute;z-index:4;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;transition:opacity .5s}
 #blackout.on{opacity:1;pointer-events:auto}
 #menu{position:absolute;z-index:6;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;padding:min(16vh,120px) 16px 0;box-sizing:border-box;background:#000;image-rendering:pixelated}
@@ -209,7 +210,8 @@ $('warnNo').onclick=()=>{closeMain();startEndless();};
 const HS_KEY='frank_hs';
 function loadScore(){let c=0,l=0;try{const m=document.cookie.match(new RegExp('(?:^|; )'+HS_KEY+'=(\\d+)'));if(m)c=+m[1];}catch(e){}try{l=parseInt(localStorage.getItem(HS_KEY),10)||0;}catch(e){}return Math.max(c,l);}
 function saveScore(){try{document.cookie=HS_KEY+'='+score+'; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(HS_KEY,score);}catch(e){}}
-function showScore(pop){const e=$('score');e.textContent='HIGH SCORE: '+score;e.style.display='block';e.classList.remove('pop');if(pop){void e.offsetWidth;e.classList.add('pop');}}
+function spdMul(){return Math.min(2,.65+.08*hdLvl);}
+function showScore(pop){const e=$('score');const sm=spdMul();e.innerHTML='HIGH SCORE: '+score+'<div class="spd">SPEED x'+sm.toFixed(2)+(sm>=2?' MAX':'')+'</div>';e.style.display='block';e.classList.remove('pop');if(pop){void e.offsetWidth;e.classList.add('pop');}}
 function startEndless(){hdLvl=0;setMusic('boss');endless=true;gab=5;score=loadScore();$('stage').classList.add('endless');showScore(false);startBattle();}
 function blackout(){$('dlg').style.display='none';$('blackout').classList.add('on');
  setTimeout(()=>{const t="I'm not done yet...";say('Frank',t,null,70);setTimeout(revive,t.length*70+1400);},900);}
@@ -241,7 +243,7 @@ function death(){$('dlg').style.display='none';const s=$('sprite');setSprite('ta
  setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',frankReturns,60);},2400);}
 function lose(){endBattle();say('Frank','Ha! Is that all? Try again.',()=>say('Al','(One more time...)',startBattle));}
 function strike(){if(st!=='bar')return;dmg=Math.round(12+38*(1-Math.abs(mk-.5)*2));bhp-=dmg;st='hit';tm=0;const s=$('sprite');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake');}
-function spawn(dt){const m=Math.min(1.8,1+.12*rnd_)*(endless?Math.min(2,.65+.08*hdLvl):1),p=rnd_%7;sp+=dt;
+function spawn(dt){const m=Math.min(1.8,1+.12*rnd_)*(endless?spdMul():1),p=rnd_%7;sp+=dt;
  if(p===0&&sp>250/m){sp=0;bl.push({x:AX+R()*AW,y:AY,vx:0,vy:(2+R())*m});}
  if(p===1&&sp>1000/m){sp=0;const gap=Math.floor(R()*6);for(let i=0;i<8;i++)if(i<gap||i>gap+2)bl.push({x:AX+12+i*25,y:AY,vx:0,vy:1.5*m});}
  if(p===2&&sp>650/m){sp=0;const x=R()<.5?AX:AX+AW,y=AY+R()*AH,a=Math.atan2(hy-y,hx-x);bl.push({x,y,vx:Math.cos(a)*1.8*m,vy:Math.sin(a)*1.8*m});}
@@ -287,6 +289,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.17</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.18</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
