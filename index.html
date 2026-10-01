@@ -59,6 +59,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 .sl img.kn{position:absolute;top:50%;width:17px;height:auto;image-rendering:pixelated;transform:translate(-50%,-50%);pointer-events:none}
 #load{font-size:.9rem;min-height:1.2em;color:#aaa}
 #menu button:disabled{opacity:.4;cursor:default}
+#ver{position:fixed;z-index:9;left:calc(6px + env(safe-area-inset-left,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));font-size:.75rem;color:#fff;opacity:.5;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
 </style>
 </head>
 <body>
@@ -266,5 +267,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
+<div id="ver">v0.11</div>
 </body>
 </html>
