@@ -14,6 +14,8 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #sprite.shake{animation:sh .3s}
 #sprite.rage{animation:rg .1s linear infinite}
 @keyframes rg{0%{transform:translateX(-50%) translate(-5px,2px) rotate(-2deg)}25%{transform:translateX(-50%) translate(4px,-3px) rotate(2deg)}50%{transform:translateX(-50%) translate(-3px,-2px) rotate(-1deg)}75%{transform:translateX(-50%) translate(5px,3px) rotate(2deg)}100%{transform:translateX(-50%) translate(-5px,2px) rotate(-2deg)}}
+#angry{display:none;position:absolute;z-index:2;--sh:min(50vh,420px);width:calc(var(--sh)*.2);height:auto;left:calc(50% + var(--sh)*.1);bottom:calc(160px + var(--sh)*.8);image-rendering:pixelated;pointer-events:none;animation:vein .25s ease-in-out infinite}
+@keyframes vein{0%,100%{transform:scale(1) rotate(-6deg)}50%{transform:scale(1.25) rotate(6deg)}}
 #sprite.spin{animation:spn 1.6s linear forwards}
 #sprite.big{transform:translateX(-50%) scale(1.7)}
 @keyframes sh{25%{transform:translateX(-56%) rotate(-5deg)}75%{transform:translateX(-44%) rotate(5deg)}}
@@ -70,6 +72,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <body>
 <div id="stage">
 <img id="sprite" alt="Frank" src="">
+<img id="angry" alt="" src="image/angry.avif" draggable="false">
 <div id="bubble"></div>
 <div id="choices"></div>
 <div id="dlg"><div id="name"></div><p id="txt"></p><div id="bm"></div><span id="more">▼</span></div>
@@ -94,7 +97,7 @@ function track(p){preTotal++;preLeft++;let d=0;const done=()=>{if(d)return;d=1;p
 function pimg(src){const i=new Image();KEEP.push(i);track(new Promise(r=>{i.onload=r;i.onerror=r;}));i.src=src;return i;}
 track(document.fonts.load('16px CustomFont'));
 HEART=pimg('image/heart.avif');ROCK=pimg('image/rock.avif');
-[...Object.values(IMG),...Object.values(BTN),'image/text_box.avif','image/choice_box.avif','image/choice_box2.avif','image/slider.avif',BOOM].forEach(u=>pimg(u));
+[...Object.values(IMG),...Object.values(BTN),'image/text_box.avif','image/choice_box.avif','image/choice_box2.avif','image/slider.avif','image/angry.avif',BOOM].forEach(u=>pimg(u));
 preUI();
 const POOL=[];let pi=0,unlocked=false;
 for(let k=0;k<4;k++){const a=new Audio('audio/talk.aac');a.preload='auto';POOL.push(a);}
@@ -126,8 +129,8 @@ setInterval(()=>{const a=MUS.boss;if(wantMus==='boss'&&!bossDone&&!a.paused&&isF
 const SEQ=['normal','talk1','talk2','talk1'];
 let cont=null,asked,asked2,typing=false,fin=null,ty=null,tk=null,endless=false,score=0,introTok=0;
 function setSprite(k){$('sprite').src=IMG[k];}
-let rageT=0;function rage(ms){const s=$('sprite');clearTimeout(rageT);s.classList.add('rage');rageT=setTimeout(()=>s.classList.remove('rage'),ms||1500);}
-function calm(){clearTimeout(rageT);$('sprite').classList.remove('rage');}
+let rageT=0;function rage(ms){const s=$('sprite');clearTimeout(rageT);s.classList.add('rage');$('angry').style.display='block';rageT=setTimeout(calm,ms||2200);}
+function calm(){clearTimeout(rageT);$('sprite').classList.remove('rage');$('angry').style.display='none';}
 function clr(){clearInterval(ty);clearInterval(tk);typing=false;}
 function say(who,text,next,sd,done){sd=sd||TALK_MS;clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent=who;$('name').style.display=who?'block':'none';$('txt').textContent='';$('choices').innerHTML='';$('more').style.display='none';cont=null;
  let i=0,t0=performance.now();typing=true;
@@ -155,11 +158,11 @@ function ask(i){asked.add(i);chain('Frank',HIST_Q[i][1],afterAsk,22);}
 function afterAsk(){if(asked.size>=HIST_Q.length)choose('(You have heard all three. What now?)',[['Reread the 3',hub],['Continue',summary]]);else hub();}
 function summary(){chain('Frank',[HIST_SUM],()=>say('Al',AL_TOPIC,null,30,()=>topics(true)),22);}
 function topics(first){
- const o=[['Polka',()=>{asked2.add(0);rage(1600);say('Frank','Polka? I HATE polka...',()=>{calm();topics();});}],['Accordions',()=>{asked2.add(1);rage(2200);say('Frank','Accordions? That thing used to make the WORST music ever?',()=>{calm();topics();});}]];
+ const o=[['Polka',()=>{asked2.add(0);rage(2400);say('Frank','Polka? I HATE polka...',()=>{calm();topics();});}],['Accordions',()=>{asked2.add(1);rage(3000);say('Frank','Accordions? That thing used to make the WORST music ever?',()=>{calm();topics();});}]];
  o.forEach((x,i)=>{if(asked2.has(i))x[0]='✔ '+x[0];});
  if(asked2.size>=2)o.push(['There will be no polka disrespect in my presence, DESTROY HIM!',fight,true]);
  choose(first?AL_TOPIC:'(What do you say?)',o);}
-function fight(){const tok=++introTok;setMusic('boss');rage(2500);
+function fight(){const tok=++introTok;setMusic('boss');rage(3300);
  // [text, ms]  -- slots add up to 13000ms of Frank talking, then the arena shows for 4s before the first attack
  const L=[["You dare?! Fine. Dodge THIS!",2500],["Do you know how long I have waited\nto ruin someone's accordion solo?",3600],["Years, Al. YEARS. Of elevator jazz.\nOf cloudy skies. Of polka-free roads!",4000],["But none of that matters now.\nPrepare yourself.",2900]];
  let i=0;(function step(){if(tok!==introTok)return;if(i>=L.length){startBattle(true);return;}const t=L[i][0],ms=L[i][1];i++;say('Frank',t,null,Math.max(20,Math.min(60,Math.floor(ms*.75/t.length))));setTimeout(step,ms);})();}
@@ -284,6 +287,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.15</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.16</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
