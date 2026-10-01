@@ -12,6 +12,8 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #sprite{position:absolute;left:50%;bottom:160px;transform:translateX(-50%);height:min(50vh,420px);image-rendering:pixelated}
 #sprite.bt{bottom:40%}
 #sprite.shake{animation:sh .3s}
+#sprite.rage{animation:rg .1s linear infinite}
+@keyframes rg{0%{transform:translateX(-50%) translate(-5px,2px) rotate(-2deg)}25%{transform:translateX(-50%) translate(4px,-3px) rotate(2deg)}50%{transform:translateX(-50%) translate(-3px,-2px) rotate(-1deg)}75%{transform:translateX(-50%) translate(5px,3px) rotate(2deg)}100%{transform:translateX(-50%) translate(-5px,2px) rotate(-2deg)}}
 #sprite.spin{animation:spn 1.6s linear forwards}
 #sprite.big{transform:translateX(-50%) scale(1.7)}
 @keyframes sh{25%{transform:translateX(-56%) rotate(-5deg)}75%{transform:translateX(-44%) rotate(5deg)}}
@@ -60,6 +62,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #load{font-size:.9rem;min-height:1.2em;color:#aaa}
 #menu button:disabled{opacity:.4;cursor:default}
 #ver{position:fixed;z-index:9;left:calc(6px + env(safe-area-inset-left,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));font-size:.75rem;color:#fff;opacity:.5;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
+#credits{position:fixed;z-index:9;right:calc(6px + env(safe-area-inset-right,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));font-size:.75rem;color:#fff;opacity:.5;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
 </style>
 </head>
 <body>
@@ -99,10 +102,20 @@ function blip(ch){if(!unlocked||!ch||/\s/.test(ch)||VOL.speak<=0)return;const a=
 // ---- MUSIC ----
 const mkTrack=(srcs,loop)=>{const a=new Audio();a.preload='auto';a.loop=loop;a.volume=.5;srcs.forEach(u=>{const e=document.createElement('source');e.src=u;a.appendChild(e);});return a;};
 const MUS={menu:mkTrack(['audio/anza.aac'],true),boss:mkTrack(['audio/BIG_SHOT.aac','audio/BIGSHOT.aac'],false),loop:mkTrack(['audio/BIG_SHOT_loop.aac','audio/BIGSHOT_loop.aac'],true)};
-function applyVol(){for(const k in MUS)MUS[k].volume=.5*VOL.music;}applyVol();
+// Menu music plays through Web Audio (not an <audio> element) so Windows/OS media controls don't pick it up.
+const AC=window.AudioContext||window.webkitAudioContext;
+let mCtx=null,mBuf=null,mSrc=null,mGain=null,mFail=!AC,mLoading=false;
+function mLoad(){if(mBuf||mFail||mLoading)return;mLoading=true;
+ fetch('audio/anza.aac').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(b=>{mCtx=mCtx||new AC();return new Promise((ok,no)=>mCtx.decodeAudioData(b,ok,no));}).then(b=>{mBuf=b;mLoading=false;applyMusic();}).catch(()=>{mFail=true;mLoading=false;applyMusic();});}
+function mPlay(){if(!mCtx)mCtx=new AC();if(mCtx.state!=='running')mCtx.resume().catch(()=>{});if(mSrc)return;
+ if(!mGain){mGain=mCtx.createGain();mGain.connect(mCtx.destination);}mGain.gain.value=.5*VOL.music;
+ const s=mCtx.createBufferSource();s.buffer=mBuf;s.loop=true;s.connect(mGain);s.start(0);mSrc=s;}
+function mStop(){if(mSrc){try{mSrc.stop();}catch(e){}try{mSrc.disconnect();}catch(e){}mSrc=null;}}
+function applyVol(){for(const k in MUS)MUS[k].volume=.5*VOL.music;if(mGain)mGain.gain.value=.5*VOL.music;}applyVol();
 let wantMus='menu',bossDone=false;
 function applyMusic(){const act=wantMus==='menu'?'menu':wantMus==='boss'?(bossDone?'loop':'boss'):null;
- for(const k in MUS){const a=MUS[k];if(k===act){if(a.paused)a.play().catch(()=>{});}else if(!a.paused||a.currentTime>0){a.pause();a.currentTime=0;}}}
+ const wa=!mFail;if(act==='menu'&&wa){if(mBuf)mPlay();else mLoad();}else mStop();
+ for(const k in MUS){const a=MUS[k];if(k==='menu'&&wa)continue;if(k===act){if(a.paused)a.play().catch(()=>{});}else if(!a.paused||a.currentTime>0){a.pause();a.currentTime=0;}}}
 function setMusic(k){if(k==='boss'&&wantMus!=='boss')bossDone=false;wantMus=k;applyMusic();}
 function bossToLoop(){if(wantMus==='boss'&&!bossDone){bossDone=true;applyMusic();}}
 MUS.boss.addEventListener('ended',bossToLoop);
@@ -111,6 +124,8 @@ setInterval(()=>{const a=MUS.boss;if(wantMus==='boss'&&!bossDone&&!a.paused&&isF
 const SEQ=['normal','talk1','talk2','talk1'];
 let cont=null,asked,asked2,typing=false,fin=null,ty=null,tk=null,endless=false,score=0,introTok=0;
 function setSprite(k){$('sprite').src=IMG[k];}
+let rageT=0;function rage(ms){const s=$('sprite');clearTimeout(rageT);s.classList.add('rage');rageT=setTimeout(()=>s.classList.remove('rage'),ms||1500);}
+function calm(){clearTimeout(rageT);$('sprite').classList.remove('rage');}
 function clr(){clearInterval(ty);clearInterval(tk);typing=false;}
 function say(who,text,next,sd,done){sd=sd||TALK_MS;clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent=who;$('name').style.display=who?'block':'none';$('txt').textContent='';$('choices').innerHTML='';$('more').style.display='none';cont=null;
  let i=0,t0=performance.now();typing=true;
@@ -138,11 +153,11 @@ function ask(i){asked.add(i);chain('Frank',HIST_Q[i][1],afterAsk,22);}
 function afterAsk(){if(asked.size>=HIST_Q.length)choose('(You have heard all three. What now?)',[['Reread the 3',hub],['Continue',summary]]);else hub();}
 function summary(){chain('Frank',[HIST_SUM],()=>say('Al',AL_TOPIC,null,30,()=>topics(true)),22);}
 function topics(first){
- const o=[['Polka',()=>{asked2.add(0);say('Frank','Polka? I HATE polka...',()=>topics());}],['Accordions',()=>{asked2.add(1);say('Frank','Accordions? That thing used to make the WORST music ever?',()=>topics());}]];
+ const o=[['Polka',()=>{asked2.add(0);rage(1600);say('Frank','Polka? I HATE polka...',()=>{calm();topics();});}],['Accordions',()=>{asked2.add(1);rage(2200);say('Frank','Accordions? That thing used to make the WORST music ever?',()=>{calm();topics();});}]];
  o.forEach((x,i)=>{if(asked2.has(i))x[0]='✔ '+x[0];});
  if(asked2.size>=2)o.push(['There will be no polka disrespect in my presence, DESTROY HIM!',fight,true]);
  choose(first?AL_TOPIC:'(What do you say?)',o);}
-function fight(){const tok=++introTok;setMusic('boss');
+function fight(){const tok=++introTok;setMusic('boss');rage(2500);
  // [text, ms]  -- slots add up to 13000ms of Frank talking, then the arena shows for 4s before the first attack
  const L=[["You dare?! Fine. Dodge THIS!",2500],["Do you know how long I have waited\nto ruin someone's accordion solo?",3600],["Years, Al. YEARS. Of elevator jazz.\nOf cloudy skies. Of polka-free roads!",4000],["But none of that matters now.\nPrepare yourself.",2900]];
  let i=0;(function step(){if(tok!==introTok)return;if(i>=L.length){startBattle(true);return;}const t=L[i][0],ms=L[i][1];i++;say('Frank',t,null,Math.max(20,Math.min(60,Math.floor(ms*.75/t.length))));setTimeout(step,ms);})();}
@@ -202,7 +217,7 @@ const HD_TAUNTS=["GIMMIE THE SANDWICH YOU POLKA PLAYING HOOLIGAN","RAAAGGHHHH SP
 let curT=TAUNTS[0];
 const BMAX=300,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},first=false;
 const R=Math.random;
-function startBattle(intro){clr();$('dlg').style.display='none';$('battle').style.display='block';$('sprite').classList.add('bt');setSprite('ref');php=PMAX;bhp=BMAX;if(!endless)gab=5;inv=0;resize();rnd_=0;tauntT=0;nextRound();first=intro===true;if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
+function startBattle(intro){calm();clr();$('dlg').style.display='none';$('battle').style.display='block';$('sprite').classList.add('bt');setSprite('ref');php=PMAX;bhp=BMAX;if(!endless)gab=5;inv=0;resize();rnd_=0;tauntT=0;nextRound();first=intro===true;if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
 function resize(){const k=Math.max(1,cv.clientWidth/W*(window.devicePixelRatio||1));const w=Math.round(W*k);if(cv.width!==w){cv.width=w;cv.height=Math.round(215*k);}sc=cv.width/W;}
 addEventListener('resize',()=>{if(run)resize();});
 function mbtn(label,fn,img){const b=document.createElement('button');if(img){b.className='img';const i=new Image();i.src=BTN[img];b.appendChild(i);}else{b.className='txt';b.textContent=label;}b.onclick=e=>{e.stopPropagation();fn();};$('bm').appendChild(b);return b;}
@@ -267,6 +282,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.13.2</div>
+<div id="ver">v0.13</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
