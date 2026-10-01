@@ -129,7 +129,7 @@ setInterval(()=>{const a=MUS.boss;if(wantMus==='boss'&&!bossDone&&!a.paused&&isF
 const SEQ=['normal','talk1','talk2','talk1'];
 let cont=null,asked,asked2,typing=false,fin=null,ty=null,tk=null,endless=false,score=0,introTok=0;
 function setSprite(k){$('sprite').src=IMG[k];}
-let rageT=0;function rage(ms){const s=$('sprite');clearTimeout(rageT);s.classList.add('rage');$('angry').style.display='block';rageT=setTimeout(calm,ms||2200);}
+let rageT=0;function rage(ms){const s=$('sprite');clearTimeout(rageT);s.classList.add('rage');$('angry').style.display='block';rageT=ms?setTimeout(calm,ms):0;}
 function calm(){clearTimeout(rageT);$('sprite').classList.remove('rage');$('angry').style.display='none';}
 function clr(){clearInterval(ty);clearInterval(tk);typing=false;}
 function say(who,text,next,sd,done){sd=sd||TALK_MS;clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent=who;$('name').style.display=who?'block':'none';$('txt').textContent='';$('choices').innerHTML='';$('more').style.display='none';cont=null;
@@ -158,11 +158,11 @@ function ask(i){asked.add(i);chain('Frank',HIST_Q[i][1],afterAsk,22);}
 function afterAsk(){if(asked.size>=HIST_Q.length)choose('(You have heard all three. What now?)',[['Reread the 3',hub],['Continue',summary]]);else hub();}
 function summary(){chain('Frank',[HIST_SUM],()=>say('Al',AL_TOPIC,null,30,()=>topics(true)),22);}
 function topics(first){
- const o=[['Polka',()=>{asked2.add(0);rage(2400);say('Frank','Polka? I HATE polka...',()=>{calm();topics();});}],['Accordions',()=>{asked2.add(1);rage(3000);say('Frank','Accordions? That thing used to make the WORST music ever?',()=>{calm();topics();});}]];
+ const o=[['Polka',()=>{asked2.add(0);rage();say('Frank','Polka? I HATE polka...',()=>{calm();topics();});}],['Accordions',()=>{asked2.add(1);rage();say('Frank','Accordions? That thing used to make the WORST music ever?',()=>{calm();topics();});}]];
  o.forEach((x,i)=>{if(asked2.has(i))x[0]='✔ '+x[0];});
  if(asked2.size>=2)o.push(['There will be no polka disrespect in my presence, DESTROY HIM!',fight,true]);
  choose(first?AL_TOPIC:'(What do you say?)',o);}
-function fight(){const tok=++introTok;setMusic('boss');rage(3300);
+function fight(){const tok=++introTok;setMusic('boss');rage();
  // [text, ms]  -- slots add up to 13000ms of Frank talking, then the arena shows for 4s before the first attack
  const L=[["You dare?! Fine. Dodge THIS!",2500],["Do you know how long I have waited\nto ruin someone's accordion solo?",3600],["Years, Al. YEARS. Of elevator jazz.\nOf cloudy skies. Of polka-free roads!",4000],["But none of that matters now.\nPrepare yourself.",2900]];
  let i=0;(function step(){if(tok!==introTok)return;if(i>=L.length){startBattle(true);return;}const t=L[i][0],ms=L[i][1];i++;say('Frank',t,null,Math.max(20,Math.min(60,Math.floor(ms*.75/t.length))));setTimeout(step,ms);})();}
@@ -177,8 +177,8 @@ const BEAT_KEY='frank_beat';
 function hasBeaten(){let c=false,l=false;try{c=new RegExp('(?:^|; )'+BEAT_KEY+'=1').test(document.cookie);}catch(e){}try{l=localStorage.getItem(BEAT_KEY)==='1';}catch(e){}return c||l;}
 function markBeaten(){try{document.cookie=BEAT_KEY+'=1; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(BEAT_KEY,'1');}catch(e){}}
 function showWarn(on){$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';$('opt').style.display='none';}
-function openMain(){showWarn(false);$('menu').style.display='flex';setMusic('menu');}
-function closeMain(){showWarn(false);$('menu').style.display='none';setMusic(null);}
+function openMain(){calm();showWarn(false);$('menu').style.display='flex';setMusic('menu');}
+function closeMain(){calm();showWarn(false);$('menu').style.display='none';setMusic(null);}
 function toMenu(){clr();$('dlg').style.display='none';$('choices').innerHTML='';$('bm').innerHTML='';$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';endless=false;openMain();}
 function mkSlider(label,key){
  const row=document.createElement('div');row.className='orow';
@@ -210,7 +210,7 @@ const HS_KEY='frank_hs';
 function loadScore(){let c=0,l=0;try{const m=document.cookie.match(new RegExp('(?:^|; )'+HS_KEY+'=(\\d+)'));if(m)c=+m[1];}catch(e){}try{l=parseInt(localStorage.getItem(HS_KEY),10)||0;}catch(e){}return Math.max(c,l);}
 function saveScore(){try{document.cookie=HS_KEY+'='+score+'; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(HS_KEY,score);}catch(e){}}
 function showScore(pop){const e=$('score');e.textContent='HIGH SCORE: '+score;e.style.display='block';e.classList.remove('pop');if(pop){void e.offsetWidth;e.classList.add('pop');}}
-function startEndless(){setMusic('boss');endless=true;gab=5;score=loadScore();$('stage').classList.add('endless');showScore(false);startBattle();}
+function startEndless(){hdLvl=0;setMusic('boss');endless=true;gab=5;score=loadScore();$('stage').classList.add('endless');showScore(false);startBattle();}
 function blackout(){$('dlg').style.display='none';$('blackout').classList.add('on');
  setTimeout(()=>{const t="I'm not done yet...";say('Frank',t,null,70);setTimeout(revive,t.length*70+1400);},900);}
 function revive(){const s=$('sprite');s.classList.remove('spin','big','shake');s.style.display='';$('blackout').classList.remove('on');showScore(true);startBattle();}
@@ -219,7 +219,7 @@ function revive(){const s=$('sprite');s.classList.remove('spin','big','shake');s
 const cv=$('cv'),g=cv.getContext('2d'),W=360,AX=80,AY=50,AW=200,AH=150;
 const TAUNTS=["Haha, Polka dies today!!!","Al? What a weirdo.","Polka was never good!!!","You call that polka?"];
 const HD_TAUNTS=["GIMMIE THE SANDWICH YOU POLKA PLAYING HOOLIGAN","RAAAGGHHHH SPICY CHICKEN SANDWICH","NOW I CAN'T EAT LUNCH AND IM GONNA BLAME POLKA","I HATE ALL ACCORDIAN PLAYERS, KILL ALL ACCORDIAN PLAYERS"];
-let curT=TAUNTS[0];
+let curT=TAUNTS[0],hdLvl=0;
 const BMAX=300,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},first=false;
 const R=Math.random;
 function startBattle(intro){calm();clr();$('dlg').style.display='none';$('battle').style.display='block';$('sprite').classList.add('bt');setSprite('ref');php=PMAX;bhp=BMAX;if(!endless)gab=5;inv=0;resize();rnd_=0;tauntT=0;nextRound();first=intro===true;if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
@@ -235,13 +235,13 @@ function goHeal(){if(st!=='menu')return;itemsUI('');}
 function eat(){if(st!=='items'||gab<=0||php>=PMAX)return;gab--;const o=php;php=Math.min(PMAX,php+30);itemsUI('+'+(php-o)+' HP!');}
 function nextRound(){const pool=endless?TAUNTS.concat(HD_TAUNTS):TAUNTS;let t;do{t=pool[Math.floor(R()*pool.length)];}while(t===curT&&pool.length>1);curT=t;st='talk';tm=0;bl=[];sp=0;hx=AX+AW/2;hy=AY+AH/2;}
 function endBattle(){run=false;$('bubble').style.display='none';$('battle').style.display='none';$('sprite').classList.remove('bt');setSprite('normal');}
-function win(){endBattle();if(endless){score++;saveScore();death();}else{markBeaten();setMusic(null);say('Frank','There really were two hits. You hitting me, and me hitting the floor',death,40);}}
+function win(){endBattle();if(endless){score++;hdLvl++;saveScore();death();}else{markBeaten();setMusic(null);say('Frank','There really were two hits. You hitting me, and me hitting the floor',death,40);}}
 function death(){$('dlg').style.display='none';const s=$('sprite');setSprite('taunt');s.classList.add('spin');let bi;
  setTimeout(()=>{s.classList.remove('spin');s.classList.add('big');let n=0;s.src=BOOM+'?'+Date.now();bi=null;},1600);
  setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',frankReturns,60);},2400);}
 function lose(){endBattle();say('Frank','Ha! Is that all? Try again.',()=>say('Al','(One more time...)',startBattle));}
 function strike(){if(st!=='bar')return;dmg=Math.round(12+38*(1-Math.abs(mk-.5)*2));bhp-=dmg;st='hit';tm=0;const s=$('sprite');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake');}
-function spawn(dt){const m=Math.min(1.8,1+.12*rnd_),p=rnd_%7;sp+=dt;
+function spawn(dt){const m=Math.min(1.8,1+.12*rnd_)*(endless?Math.min(2,.65+.08*hdLvl):1),p=rnd_%7;sp+=dt;
  if(p===0&&sp>250/m){sp=0;bl.push({x:AX+R()*AW,y:AY,vx:0,vy:(2+R())*m});}
  if(p===1&&sp>1000/m){sp=0;const gap=Math.floor(R()*6);for(let i=0;i<8;i++)if(i<gap||i>gap+2)bl.push({x:AX+12+i*25,y:AY,vx:0,vy:1.5*m});}
  if(p===2&&sp>650/m){sp=0;const x=R()<.5?AX:AX+AW,y=AY+R()*AH,a=Math.atan2(hy-y,hx-x);bl.push({x,y,vx:Math.cos(a)*1.8*m,vy:Math.sin(a)*1.8*m});}
@@ -287,6 +287,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.16.1</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.17</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
