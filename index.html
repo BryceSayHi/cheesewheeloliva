@@ -29,6 +29,8 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #bm button.txt{font:inherit;font-size:1rem;padding:8px 10px;border:18px solid transparent;border-image:url(image/choice_box.avif) 6 stretch;image-rendering:pixelated;background:var(--bg);color:var(--fg);cursor:pointer}
 #bm button.txt:hover{background:#222}
 #bm button:disabled{opacity:.4;cursor:default}
+#dlg:has(#bm button.img){padding:6px}
+#dlg:has(#bm button.img) #bm{margin:0;min-height:calc(130px - 36px - 12px);align-content:center}
 #choices button.evil{border-image-source:url(image/choice_box2.avif);color:var(--accent)}
 #dlg{z-index:5;position:absolute;left:10px;right:10px;bottom:10px;min-height:130px;background:var(--bg);border:18px solid transparent;border-image:url(image/text_box.avif) 6 stretch;image-rendering:pixelated;padding:14px 6px 6px;box-sizing:border-box;cursor:pointer}
 #name{position:absolute;top:-34px;left:-4px;background:var(--fg);color:var(--bg);padding:3px 14px;font-weight:bold;min-width:40px;text-align:center}
@@ -282,6 +284,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.13</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.15</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
