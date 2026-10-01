@@ -14,8 +14,8 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #sprite.shake{animation:sh .3s}
 #sprite.rage{animation:rg .1s linear infinite}
 @keyframes rg{0%{transform:translateX(-50%) translate(-5px,2px) rotate(-2deg)}25%{transform:translateX(-50%) translate(4px,-3px) rotate(2deg)}50%{transform:translateX(-50%) translate(-3px,-2px) rotate(-1deg)}75%{transform:translateX(-50%) translate(5px,3px) rotate(2deg)}100%{transform:translateX(-50%) translate(-5px,2px) rotate(-2deg)}}
-#angry{display:none;position:absolute;z-index:2;--sh:min(50vh,420px);width:calc(var(--sh)*.2);height:auto;left:calc(50% + var(--sh)*.1);bottom:calc(160px + var(--sh)*.8);image-rendering:pixelated;pointer-events:none;animation:vein .25s ease-in-out infinite}
-@keyframes vein{0%,100%{transform:scale(1) rotate(-6deg)}50%{transform:scale(1.25) rotate(6deg)}}
+#angry{display:none;position:absolute;z-index:2;--sh:min(50vh,420px);width:calc(var(--sh)*.2);height:auto;left:calc(50% + var(--sh)*.07);bottom:calc(160px + var(--sh)*.8);image-rendering:pixelated;pointer-events:none;animation:vein .25s ease-in-out infinite}
+@keyframes vein{0%,100%{transform:scale(1) rotate(39deg)}50%{transform:scale(1.25) rotate(51deg)}}
 #sprite.spin{animation:spn 1.6s linear forwards}
 #sprite.big{transform:translateX(-50%) scale(1.7)}
 @keyframes sh{25%{transform:translateX(-56%) rotate(-5deg)}75%{transform:translateX(-44%) rotate(5deg)}}
@@ -287,6 +287,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.16</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.16.1</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
