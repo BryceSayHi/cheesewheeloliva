@@ -1,0 +1,104 @@
+# ==================================================================
+#  FRANK  -  dialogue file  (the game reads this when it starts)
+# ==================================================================
+#  key = text
+#   - one entry per line. Blank lines and lines starting with # are ignored.
+#   - write \n for a line break inside a message.
+#   - a key that appears more than once is a list (taunts, history answers...).
+#   - long passages are split into click-through pages automatically.
+#   - if a key is missing the game shows [key_name] so it's easy to spot.
+#   - speaker names (Frank / Al) are set in the game code, not here.
+# ==================================================================
+
+# ---- warning screen (INFINITE HYPERDEATH before beating the story) ----
+warn_text = hey! you might wanna play the story before playing INFINITE HYPERDEATH
+warn_ok = okay
+warn_no = no I'm a yucky hobo and hate fun
+
+# ---- opening ----
+start_narr = You stroll down a road with your accordion.\nA figure blocks the way...
+start_frank = Well, well, well. An accordion player.\nWhat is your name, stranger?
+
+# shared prompt shown above name / topic choices
+prompt_say = (What do you say?)
+
+name_real = Tell him your real name
+name_real_al = I'm Al... WEIRD AL
+name_secret = I ain't tellin you my name
+name_secret_al = I ain't tellin you my name.
+name_secret_frank = Okay, then I'll just call you Yucky Hobo Man.
+
+hi_frank1 = Hmm... I'm Frank Oliva. You might be a dirty polka player, but I guess I can teach you some history.
+hi_al1 = Hey! Polka isn't dirty... but I do want to learn some history. What about the Chicago Riots?
+hi_frank2 = Yeah, alright that's a pretty good topic, what do you wanna learn about it?
+
+# ---- history lesson ----
+hist_intro = In late July 1919, Chicago broke into one of the worst episodes of racial violence in American history. The riot began on July 27 and continued in waves until early August, leaving 38 people dead, of which 23 were black and 15 were white, 537 injured, and roughly a thousand, mostly Black, residents homeless. It was the deadliest outbreak of the "Red Summer" of 1919, when violence against black people flared in dozens of cities. The immediate spark was small, but the conditions that made it so terrible were building for a long time before that.
+
+hub_prompt = (What should I ask him?)
+hist_all_heard = (You have heard all three. What now?)
+hist_reread = Reread the 3
+hist_continue = Continue
+
+# Questions: hist_q<N>_title is the button, each hist_q<N>_answer line is a paragraph.
+# Add hist_q4_title / hist_q4_answer lines to add a 4th question (and update the two lines above).
+hist_q1_title = What led to the Chicago Riots?
+hist_q1_answer = Well the direct trigger was the death of Eugene Williams, a 17-year-old Black teenager whose raft drifted across the "line" that divided the 29th Street beach. A white man on the shore threw rocks at him, preventing him from coming to shore and causing Williams to drown. When a white police officer refused to arrest the man responsible and instead chose to arrest a black man who had thrown a punch at the killer, which turned the crowd's anger into violence.
+hist_q1_answer = There was also the Great Migration that brought tens of thousands of Black Southerners to Chicago in search of industrial work and an escape from the Jim Crow laws, and the city's Black population roughly doubled between 1910 and 1920. This growth collided with a rigid housing market. Restrictive covenants, real estate practices, and social pressure confined Black residents to the narrow, overcrowded "Black Belt" on the South Side. As Black families pushed outward in search of decent housing, white neighbors and "improvement associations" resisted, and dozens of Black homes were firebombed in the years before the riot.
+hist_q1_answer = Labor competition also added to the tension. Many Black workers had been hired into the stockyards and packing plants during World War I, sometimes as strikebreakers, and most white-dominated unions excluded them or treated them with hostility. When soldiers returned home in 1919 and the wartime economy shrank, white workers feared for their jobs, while Black workers, including veterans who had fought for democracy abroad, were less willing to accept second-class treatment. Institutions only made matters worse. The police were widely seen as biased, and the press often dramatized racial incidents. White neighborhood athletic clubs, which functioned partly as street gangs, organized attacks on Black residents, while politics fueled ethnic and racial rivalries.
+
+hist_q2_title = What happened after the Riots?
+hist_q2_answer = The immediate effects were seen in lives and property. Six thousand state militia troops eventually helped restore order, and a heavy rainfall also helped end the violence. Black residents bore the heaviest losses, including most of the homes destroyed. Criminal prosecutions afterward were uneven, and few white rioters faced serious consequences.
+
+hist_q3_title = What did the gov change after the fact?
+hist_q3_answer = Governor Frank Lowden appointed the Chicago Commission on Race Relations, which produced the 1922 report The Negro in Chicago. It was a landmark study that documented housing discrimination, employment barriers, and police bias, and it recommended reforms. Yet its recommendations were largely ignored. Restrictive covenants spread, and residential segregation hardened over the following decades, leaving the Black Belt more tightly bound than before. The riots also reshaped Black political and cultural life. Anti-lynching and civil rights organizing gained momentum, and a stronger belief of self-defense took hold, captured in works like Claude McKay's poem "If We Must Die." Within Chicago, Black political organization deepened, eventually contributing to the rise of figures such as Oscar De Priest, who in 1928 became the first Black congressman elected from the North. Distrust between Black workers and organized labor persisted, and many Black workers concluded that employers were a more reliable, if self-interested, ally than white-led unions.
+
+hist_sum = So you see, Al. The 1919 riots were not a spontaneous outburst but the product of migration, housing segregation, labor competition, and institutional bias reaching a breaking point. Its effects were just as lasting, the failure to act on its lessons entrenched segregation in Chicago, while the anger and organizing it inspired helped lay groundwork for the civil rights movement.
+
+# ---- topics after the lesson ----
+al_topic = Well, now I definitely know a lot more about the Chicago Riots, wanna talk about...
+topic_polka = Polka
+topic_polka_reply = Polka? I HATE polka...
+topic_accordion = Accordions
+topic_accordion_reply = Accordions? That thing used to make the WORST music ever?
+topic_fight = There will be no polka disrespect in my presence, DESTROY HIM!
+
+# ---- boss intro ----
+# format:  ms | text      (ms = how long the line stays up before the next one; they add up to ~13s)
+fight_intro = 2500 | You dare?! Fine. Dodge THIS!
+fight_intro = 3600 | Do you know how long I have waited\nto ruin someone's accordion solo?
+fight_intro = 4000 | Years, Al. YEARS. Of elevator jazz.\nOf cloudy skies. Of polka-free roads!
+fight_intro = 2900 | But none of that matters now.\nPrepare yourself.
+
+# ---- boss taunts (random each round) ----
+taunt = Haha, Polka dies today!!!
+taunt = Al? What a weirdo.
+taunt = Polka was never good!!!
+taunt = You call that polka?
+
+# extra taunts that only appear in INFINITE HYPERDEATH
+taunt_hd = GIMMIE THE SANDWICH YOU POLKA PLAYING HOOLIGAN
+taunt_hd = RAAAGGHHHH SPICY CHICKEN SANDWICH
+taunt_hd = NOW I CAN'T EAT LUNCH AND IM GONNA BLAME POLKA
+taunt_hd = I HATE ALL ACCORDIAN PLAYERS, KILL ALL ACCORDIAN PLAYERS
+
+# ---- after the fight ----
+win_frank = There really were two hits. You hitting me, and me hitting the floor
+kaboom = KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!
+return_frank = ...As I lay here dying...\nCan I at least have your spicy chicken sandwich?
+
+sandwich_prompt = (Give Frank your spicy chicken sandwich?)
+sandwich_yes = Yes, give him the sandwich
+sandwich_yes_al = Here. One spicy chicken sandwich.
+sandwich_yes_frank = Mmm... SPICY. Thank you, stranger.\nNow I can die in peace...
+the_end = — THE END —  (click to return to the menu)
+
+sandwich_no = No. It's mine.
+sandwich_no_al = No. It's my sandwich.
+sandwich_no_frank = WRONG ANSWER.\nNow you polka... FOREVER!
+sandwich_no_al2 = *grips accordion*\n(Arrows/WASD to dodge. Tap/Space to strike, then heal with gabagool!)
+
+# ---- losing / endless mode ----
+lose_frank = Ha! Is that all? Try again.
+lose_al = (One more time...)
+not_done = I'm not done yet...

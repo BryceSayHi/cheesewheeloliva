@@ -54,9 +54,9 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #opt h2{margin:0 0 min(5vh,32px);font:inherit;font-size:clamp(1.6rem,7vw,2.2rem);font-weight:normal}
 .orow{width:100%;margin-bottom:min(5vh,30px);text-align:center}
 .olab{font-size:1.1rem;margin-bottom:12px}
-.sl{position:relative;width:min(160px,36vw);margin:0 auto;cursor:pointer;touch-action:none;user-select:none}
+.sl{position:relative;width:min(160px,36vw);margin:0 auto;cursor:pointer;touch-action:none;user-select:none;--kw:17px;--v:1}
 .sl img.tr{display:block;width:100%;height:auto;image-rendering:pixelated;pointer-events:none}
-.sl img.kn{position:absolute;top:50%;width:17px;height:auto;image-rendering:pixelated;transform:translate(-50%,-50%);pointer-events:none}
+.sl img.kn{position:absolute;top:50%;left:calc(var(--kw)/2 + (100% - var(--kw))*var(--v));width:var(--kw);height:auto;image-rendering:pixelated;transform:translate(-50%,-50%);pointer-events:none}
 #load{font-size:.9rem;min-height:1.2em;color:#aaa}
 #menu button:disabled{opacity:.4;cursor:default}
 #ver{position:fixed;z-index:9;left:calc(6px + env(safe-area-inset-left,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));font-size:.75rem;color:#fff;opacity:.5;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
@@ -71,7 +71,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <div id="battle"><canvas id="cv" width="360" height="215"></canvas></div>
 <div id="score"></div>
 <div id="blackout"></div>
-<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div></div>
+<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="warn"><p id="warnText"></p><button id="warnOk"></button><button id="warnNo" class="evil"></button></div></div>
 </div>
 <script>
 const IMG={normal:'image/frank_normal.avif',talk1:'image/frank_talk1.avif',talk2:'image/frank_talk2.avif',taunt:'image/frank_taunt.avif',ref:'image/frank_sans.avif'};
@@ -84,10 +84,17 @@ try{const v=JSON.parse(localStorage.getItem(VOL_KEY)||'{}');if(typeof v.music===
 function saveVol(){try{localStorage.setItem(VOL_KEY,JSON.stringify(VOL));}catch(e){}}
 const TALK_MS=30,HIT_R=11;
 const KEEP=[];let preLeft=0,preTotal=0;
-function preUI(){const e=$('load');if(e)e.textContent=preLeft>0?'loading '+(preTotal-preLeft)+'/'+preTotal+'...':'';$('playBtn').disabled=$('hdBtn').disabled=preLeft>0;}
+function preUI(){const e=$('load');if(e)e.textContent=preLeft>0?'loading '+(preTotal-preLeft)+'/'+preTotal+'...':(dlgOK?'':(location.protocol==='file:'?'dialogue needs a web server (file:// blocks lang/dialogue.txt)':'could not load lang/dialogue.txt'));$('playBtn').disabled=$('hdBtn').disabled=preLeft>0||!dlgOK;}
 function track(p){preTotal++;preLeft++;let d=0;const done=()=>{if(d)return;d=1;preLeft--;preUI();};p.then(done,done);setTimeout(done,8000);}
 function pimg(src){const i=new Image();KEEP.push(i);track(new Promise(r=>{i.onload=r;i.onerror=r;}));i.src=src;return i;}
 track(document.fonts.load('16px CustomFont'));
+// ---- DIALOGUE: loaded from lang/dialogue.txt, preloaded with everything else ----
+const D=Object.create(null);let dlgOK=false,HIST_Q=[],TAUNTS=[],HD_TAUNTS=[],curT='';
+function parseDlg(s){String(s).replace(/^\uFEFF/,'').split(/\r?\n/).forEach(l=>{const t=l.trim();if(!t||t[0]==='#')return;const i=t.indexOf('=');if(i<1)return;const k=t.slice(0,i).trim();(D[k]||(D[k]=[])).push(t.slice(i+1).trim().replace(/\\n/g,'\n'));});}
+const TL=k=>D[k]||[];
+const T=k=>D[k]?D[k][0]:'['+k+']';
+function applyLang(){HIST_Q=[];for(let n=1;D['hist_q'+n+'_title'];n++)HIST_Q.push([T('hist_q'+n+'_title'),TL('hist_q'+n+'_answer')]);TAUNTS=TL('taunt');HD_TAUNTS=TL('taunt_hd');curT=TAUNTS[0];$('warnText').textContent=T('warn_text');$('warnOk').textContent=T('warn_ok');$('warnNo').textContent=T('warn_no');}
+track(fetch('lang/dialogue.txt',{cache:'no-cache'}).then(r=>{if(!r.ok)throw 0;return r.text();}).then(s=>{parseDlg(s);applyLang();dlgOK=true;preUI();}).catch(()=>{}));
 HEART=pimg('image/heart.avif');ROCK=pimg('image/rock.avif');
 [...Object.values(IMG),...Object.values(BTN),'image/text_box.avif','image/choice_box.avif','image/choice_box2.avif','image/slider.avif',BOOM].forEach(u=>pimg(u));
 preUI();
@@ -118,39 +125,28 @@ function say(who,text,next,sd,done){sd=sd||TALK_MS;clr();$('bm').innerHTML='';$(
  ty=setInterval(()=>{const n=Math.min(text.length,Math.floor((performance.now()-t0)/sd));if(n<=i)return;i=n;$('txt').textContent=text.slice(0,i);blip(text[i-1]);if(who==='Frank')setSprite(SEQ[Math.floor(i/4)%4]);if(i>=text.length)fin();},10);}
 function choose(text,opts){clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent='Al';$('name').style.display='block';$('txt').textContent=text;$('more').style.display='none';cont=null;const c=$('choices');c.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.textContent=o[0];if(o[2])b.className='evil';b.onclick=e=>{e.stopPropagation();o[1]();};c.appendChild(b);});}
 $('dlg').onclick=()=>{if(typing)fin();else if(cont)cont();};
-const HIST_INTRO=`In late July 1919, Chicago broke into one of the worst episodes of racial violence in American history. The riot began on July 27 and continued in waves until early August, leaving 38 people dead, of which 23 were black and 15 were white, 537 injured, and roughly a thousand, mostly Black, residents homeless. It was the deadliest outbreak of the "Red Summer" of 1919, when violence against black people flared in dozens of cities. The immediate spark was small, but the conditions that made it so terrible were building for a long time before that.`;
-const HIST_Q=[
-["What led to the Chicago Riots?",[
-`Well the direct trigger was the death of Eugene Williams, a 17-year-old Black teenager whose raft drifted across the "line" that divided the 29th Street beach. A white man on the shore threw rocks at him, preventing him from coming to shore and causing Williams to drown. When a white police officer refused to arrest the man responsible and instead chose to arrest a black man who had thrown a punch at the killer, which turned the crowd's anger into violence.`,
-`There was also the Great Migration that brought tens of thousands of Black Southerners to Chicago in search of industrial work and an escape from the Jim Crow laws, and the city's Black population roughly doubled between 1910 and 1920. This growth collided with a rigid housing market. Restrictive covenants, real estate practices, and social pressure confined Black residents to the narrow, overcrowded "Black Belt" on the South Side. As Black families pushed outward in search of decent housing, white neighbors and "improvement associations" resisted, and dozens of Black homes were firebombed in the years before the riot.`,
-`Labor competition also added to the tension. Many Black workers had been hired into the stockyards and packing plants during World War I, sometimes as strikebreakers, and most white-dominated unions excluded them or treated them with hostility. When soldiers returned home in 1919 and the wartime economy shrank, white workers feared for their jobs, while Black workers, including veterans who had fought for democracy abroad, were less willing to accept second-class treatment. Institutions only made matters worse. The police were widely seen as biased, and the press often dramatized racial incidents. White neighborhood athletic clubs, which functioned partly as street gangs, organized attacks on Black residents, while politics fueled ethnic and racial rivalries.`]],
-["What happened after the Riots?",[
-`The immediate effects were seen in lives and property. Six thousand state militia troops eventually helped restore order, and a heavy rainfall also helped end the violence. Black residents bore the heaviest losses, including most of the homes destroyed. Criminal prosecutions afterward were uneven, and few white rioters faced serious consequences.`]],
-["What did the gov change after the fact?",[
-`Governor Frank Lowden appointed the Chicago Commission on Race Relations, which produced the 1922 report The Negro in Chicago. It was a landmark study that documented housing discrimination, employment barriers, and police bias, and it recommended reforms. Yet its recommendations were largely ignored. Restrictive covenants spread, and residential segregation hardened over the following decades, leaving the Black Belt more tightly bound than before. The riots also reshaped Black political and cultural life. Anti-lynching and civil rights organizing gained momentum, and a stronger belief of self-defense took hold, captured in works like Claude McKay's poem "If We Must Die." Within Chicago, Black political organization deepened, eventually contributing to the rise of figures such as Oscar De Priest, who in 1928 became the first Black congressman elected from the North. Distrust between Black workers and organized labor persisted, and many Black workers concluded that employers were a more reliable, if self-interested, ally than white-led unions.`]]];
-const HIST_SUM=`So you see, Al. The 1919 riots were not a spontaneous outburst but the product of migration, housing segregation, labor competition, and institutional bias reaching a breaking point. Its effects were just as lasting, the failure to act on its lessons entrenched segregation in Chicago, while the anger and organizing it inspired helped lay groundwork for the civil rights movement.`;
-const AL_TOPIC="Well, now I definitely know a lot more about the Chicago Riots, wanna talk about...";
+// all dialogue lives in lang/dialogue.txt (T() = one line, TL() = list)
 // split long passages into click-through pages so the dialog box never overflows
 function pages(t,max){max=max||260;const ss=t.match(/[^.!?]*[.!?]+["']?(?:\s+|$)|[^.!?]+$/g)||[t];const out=[];let c='';ss.forEach(x=>{x=x.trim();if(!x)return;if(c&&(c+' '+x).length>max){out.push(c);c=x;}else c=c?c+' '+x:x;});if(c)out.push(c);return out;}
 function chain(who,paras,next,sd){const p=[].concat(...paras.map(x=>pages(x)));(function go(i){say(who,p[i],i<p.length-1?()=>go(i+1):next,sd);})(0);}
-function hub(){const o=HIST_Q.map((q,i)=>[(asked.has(i)?'✔ ':'')+q[0],()=>ask(i)]);choose('(What should I ask him?)',o);}
+function hub(){const o=HIST_Q.map((q,i)=>[(asked.has(i)?'✔ ':'')+q[0],()=>ask(i)]);choose(T('hub_prompt'),o);}
 function ask(i){asked.add(i);chain('Frank',HIST_Q[i][1],afterAsk,22);}
-function afterAsk(){if(asked.size>=HIST_Q.length)choose('(You have heard all three. What now?)',[['Reread the 3',hub],['Continue',summary]]);else hub();}
-function summary(){chain('Frank',[HIST_SUM],()=>say('Al',AL_TOPIC,null,30,()=>topics(true)),22);}
+function afterAsk(){if(asked.size>=HIST_Q.length)choose(T('hist_all_heard'),[[T('hist_reread'),hub],[T('hist_continue'),summary]]);else hub();}
+function summary(){chain('Frank',[T('hist_sum')],()=>say('Al',T('al_topic'),null,30,()=>topics(true)),22);}
 function topics(first){
- const o=[['Polka',()=>{asked2.add(0);say('Frank','Polka? I HATE polka...',()=>topics());}],['Accordions',()=>{asked2.add(1);say('Frank','Accordions? That thing used to make the WORST music ever?',()=>topics());}]];
+ const o=[[T('topic_polka'),()=>{asked2.add(0);say('Frank',T('topic_polka_reply'),()=>topics());}],[T('topic_accordion'),()=>{asked2.add(1);say('Frank',T('topic_accordion_reply'),()=>topics());}]];
  o.forEach((x,i)=>{if(asked2.has(i))x[0]='✔ '+x[0];});
- if(asked2.size>=2)o.push(['There will be no polka disrespect in my presence, DESTROY HIM!',fight,true]);
- choose(first?AL_TOPIC:'(What do you say?)',o);}
+ if(asked2.size>=2)o.push([T('topic_fight'),fight,true]);
+ choose(first?T('al_topic'):T('prompt_say'),o);}
 function fight(){const tok=++introTok;setMusic('boss');
  // [text, ms]  -- slots add up to 13000ms of Frank talking, then the arena shows for 4s before the first attack
- const L=[["You dare?! Fine. Dodge THIS!",2500],["Do you know how long I have waited\nto ruin someone's accordion solo?",3600],["Years, Al. YEARS. Of elevator jazz.\nOf cloudy skies. Of polka-free roads!",4000],["But none of that matters now.\nPrepare yourself.",2900]];
+ const L=TL('fight_intro').map(x=>{const j=x.indexOf('|');return [x.slice(j+1).trim(),+x.slice(0,j)||2500];});
  let i=0;(function step(){if(tok!==introTok)return;if(i>=L.length){startBattle(true);return;}const t=L[i][0],ms=L[i][1];i++;say('Frank',t,null,Math.max(20,Math.min(60,Math.floor(ms*.75/t.length))));setTimeout(step,ms);})();}
-function historyIntro(){say('Frank',"Hmm... I'm Frank Oliva. You might be a dirty polka player, but I guess I can teach you some history.",()=>say('Al',"Hey! Polka isn't dirty... but I do want to learn some history. What about the Chicago Riots?",()=>say('Frank',"Yeah, alright that's a pretty good topic, what do you wanna learn about it?",()=>chain('Frank',[HIST_INTRO],hub,22))));}
-function nameQ(){choose('(What do you say?)',[['Tell him your real name',()=>say('Al',"I'm Al... WEIRD AL",historyIntro)],["I ain't tellin you my name",()=>say('Al',"I ain't tellin you my name.",()=>say('Frank',"Okay, then I'll just call you Yucky Hobo Man.",historyIntro))]]);}
-function start(){asked=new Set();asked2=new Set();endless=false;$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('','You stroll down a road with your accordion.\nA figure blocks the way...',()=>say('Frank','Well, well, well. An accordion player.\nWhat is your name, stranger?',nameQ));}
-function frankReturns(){const s=$('sprite');s.classList.remove('spin','big','shake','bt');s.style.display='';setSprite('normal');say('Frank','...As I lay here dying...\nCan I at least have your spicy chicken sandwich?',sandwichQ);}
-function sandwichQ(){choose('(Give Frank your spicy chicken sandwich?)',[['Yes, give him the sandwich',()=>say('Al','Here. One spicy chicken sandwich.',()=>say('Frank','Mmm... SPICY. Thank you, stranger.\nNow I can die in peace...',()=>{$('sprite').style.display='none';say('','— THE END —  (click to return to the menu)',toMenu,60);}))],["No. It's mine.",()=>say('Al',"No. It's my sandwich.",()=>say('Frank','WRONG ANSWER.\nNow you polka... FOREVER!',()=>say('Al','*grips accordion*\n(Arrows/WASD to dodge. Tap/Space to strike, then heal with gabagool!)',startEndless))),true]]);}
+function historyIntro(){say('Frank',T('hi_frank1'),()=>say('Al',T('hi_al1'),()=>say('Frank',T('hi_frank2'),()=>chain('Frank',[T('hist_intro')],hub,22))));}
+function nameQ(){choose(T('prompt_say'),[[T('name_real'),()=>say('Al',T('name_real_al'),historyIntro)],[T('name_secret'),()=>say('Al',T('name_secret_al'),()=>say('Frank',T('name_secret_frank'),historyIntro))]]);}
+function start(){asked=new Set();asked2=new Set();endless=false;$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('',T('start_narr'),()=>say('Frank',T('start_frank'),nameQ));}
+function frankReturns(){const s=$('sprite');s.classList.remove('spin','big','shake','bt');s.style.display='';setSprite('normal');say('Frank',T('return_frank'),sandwichQ);}
+function sandwichQ(){choose(T('sandwich_prompt'),[[T('sandwich_yes'),()=>say('Al',T('sandwich_yes_al'),()=>say('Frank',T('sandwich_yes_frank'),()=>{$('sprite').style.display='none';say('',T('the_end'),toMenu,60);}))],[T('sandwich_no'),()=>say('Al',T('sandwich_no_al'),()=>say('Frank',T('sandwich_no_frank'),()=>say('Al',T('sandwich_no_al2'),startEndless))),true]]);}
 
 // ---- MAIN MENU ----
 const BEAT_KEY='frank_beat';
@@ -167,8 +163,8 @@ function mkSlider(label,key){
  const tr=new Image();tr.className='tr';tr.src='image/slider.avif';tr.draggable=false;tr.alt='';
  const kn=new Image();kn.className='kn';kn.src='image/rock.avif';kn.draggable=false;kn.alt='';
  sl.appendChild(tr);sl.appendChild(kn);row.appendChild(lab);row.appendChild(sl);
- const paint=()=>{kn.style.left=(VOL[key]*100)+'%';lab.textContent=label+'  '+Math.round(VOL[key]*100)+'%';};
- const setFrom=e=>{const r=sl.getBoundingClientRect();VOL[key]=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));paint();applyVol();saveVol();};
+ const paint=()=>{sl.style.setProperty('--v',VOL[key]);lab.textContent=label+'  '+Math.round(VOL[key]*100)+'%';};
+ const setFrom=e=>{const r=sl.getBoundingClientRect(),kw=kn.offsetWidth||17,u=r.width-kw;if(u>0)VOL[key]=Math.max(0,Math.min(1,(e.clientX-r.left-kw/2)/u));paint();applyVol();saveVol();};
  let dragging=false;
  sl.addEventListener('pointerdown',e=>{dragging=true;try{sl.setPointerCapture(e.pointerId);}catch(_){}setFrom(e);});
  sl.addEventListener('pointermove',e=>{if(dragging)setFrom(e);});
@@ -192,14 +188,11 @@ function saveScore(){try{document.cookie=HS_KEY+'='+score+'; max-age=31536000; p
 function showScore(pop){const e=$('score');e.textContent='HIGH SCORE: '+score;e.style.display='block';e.classList.remove('pop');if(pop){void e.offsetWidth;e.classList.add('pop');}}
 function startEndless(){setMusic('boss');endless=true;gab=5;score=loadScore();$('stage').classList.add('endless');showScore(false);startBattle();}
 function blackout(){$('dlg').style.display='none';$('blackout').classList.add('on');
- setTimeout(()=>{const t="I'm not done yet...";say('Frank',t,null,70);setTimeout(revive,t.length*70+1400);},900);}
+ setTimeout(()=>{const t=T('not_done');say('Frank',t,null,70);setTimeout(revive,t.length*70+1400);},900);}
 function revive(){const s=$('sprite');s.classList.remove('spin','big','shake');s.style.display='';$('blackout').classList.remove('on');showScore(true);startBattle();}
 
 // ---- BOSS BATTLE ----
 const cv=$('cv'),g=cv.getContext('2d'),W=360,AX=80,AY=50,AW=200,AH=150;
-const TAUNTS=["Haha, Polka dies today!!!","Al? What a weirdo.","Polka was never good!!!","You call that polka?"];
-const HD_TAUNTS=["GIMMIE THE SANDWICH YOU POLKA PLAYING HOOLIGAN","RAAAGGHHHH SPICY CHICKEN SANDWICH","NOW I CAN'T EAT LUNCH AND IM GONNA BLAME POLKA","I HATE ALL ACCORDIAN PLAYERS, KILL ALL ACCORDIAN PLAYERS"];
-let curT=TAUNTS[0];
 const BMAX=300,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},first=false;
 const R=Math.random;
 function startBattle(intro){clr();$('dlg').style.display='none';$('battle').style.display='block';$('sprite').classList.add('bt');setSprite('ref');php=PMAX;bhp=BMAX;if(!endless)gab=5;inv=0;resize();rnd_=0;tauntT=0;nextRound();first=intro===true;if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
@@ -215,11 +208,11 @@ function goHeal(){if(st!=='menu')return;itemsUI('');}
 function eat(){if(st!=='items'||gab<=0||php>=PMAX)return;gab--;const o=php;php=Math.min(PMAX,php+30);itemsUI('+'+(php-o)+' HP!');}
 function nextRound(){const pool=endless?TAUNTS.concat(HD_TAUNTS):TAUNTS;let t;do{t=pool[Math.floor(R()*pool.length)];}while(t===curT&&pool.length>1);curT=t;st='talk';tm=0;bl=[];sp=0;hx=AX+AW/2;hy=AY+AH/2;}
 function endBattle(){run=false;$('bubble').style.display='none';$('battle').style.display='none';$('sprite').classList.remove('bt');setSprite('normal');}
-function win(){endBattle();if(endless){score++;saveScore();death();}else{markBeaten();setMusic(null);say('Frank','There really were two hits. You hitting me, and me hitting the floor',death,40);}}
+function win(){endBattle();if(endless){score++;saveScore();death();}else{markBeaten();setMusic(null);say('Frank',T('win_frank'),death,40);}}
 function death(){$('dlg').style.display='none';const s=$('sprite');setSprite('taunt');s.classList.add('spin');let bi;
  setTimeout(()=>{s.classList.remove('spin');s.classList.add('big');let n=0;s.src=BOOM+'?'+Date.now();bi=null;},1600);
- setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',frankReturns,60);},2400);}
-function lose(){endBattle();say('Frank','Ha! Is that all? Try again.',()=>say('Al','(One more time...)',startBattle));}
+ setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('',T('kaboom'),frankReturns,60);},2400);}
+function lose(){endBattle();say('Frank',T('lose_frank'),()=>say('Al',T('lose_al'),startBattle));}
 function strike(){if(st!=='bar')return;dmg=Math.round(12+38*(1-Math.abs(mk-.5)*2));bhp-=dmg;st='hit';tm=0;const s=$('sprite');s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake');}
 function spawn(dt){const m=Math.min(1.8,1+.12*rnd_),p=rnd_%7;sp+=dt;
  if(p===0&&sp>250/m){sp=0;bl.push({x:AX+R()*AW,y:AY,vx:0,vy:(2+R())*m});}
@@ -267,6 +260,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.11</div>
+<div id="ver">v0.12</div>
 </body>
 </html>
