@@ -50,6 +50,13 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #warn p{margin:0 0 24px;box-sizing:border-box;max-width:min(520px,100%);text-align:center;font-size:1.15rem;line-height:1.4;padding:10px 14px;border:18px solid transparent;border-image:url(image/text_box.avif) 6 stretch;background:var(--bg)}
 #warn button{max-width:100%}
 #menu button.evil{border-image-source:url(image/choice_box2.avif);color:var(--accent)}
+#opt{display:none;flex-direction:column;align-items:center;width:min(420px,100%)}
+#opt h2{margin:0 0 min(5vh,32px);font:inherit;font-size:clamp(1.6rem,7vw,2.2rem);font-weight:normal}
+.orow{width:100%;margin-bottom:min(5vh,30px);text-align:center}
+.olab{font-size:1.1rem;margin-bottom:12px}
+.sl{position:relative;width:min(160px,36vw);margin:0 auto;cursor:pointer;touch-action:none;user-select:none}
+.sl img.tr{display:block;width:100%;height:auto;image-rendering:pixelated;pointer-events:none}
+.sl img.kn{position:absolute;top:50%;width:17px;height:auto;image-rendering:pixelated;transform:translate(-50%,-50%);pointer-events:none}
 </style>
 </head>
 <body>
@@ -61,7 +68,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <div id="battle"><canvas id="cv" width="360" height="215"></canvas></div>
 <div id="score"></div>
 <div id="blackout"></div>
-<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div></div>
+<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="optBtn">OPTIONS</button></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div></div>
 </div>
 <script>
 document.fonts.load('16px CustomFont');
@@ -70,13 +77,17 @@ const $=id=>document.getElementById(id);
 const BOOM='gif/explode.gif';
 const HEART=new Image(),ROCK=new Image();HEART.src='image/heart.avif';ROCK.src='image/rock.avif';
 const BTN={fight:'image/fight.avif',heal:'image/heal.avif'};
+const VOL_KEY='frank_vol';const VOL={music:1,speak:1};
+try{const v=JSON.parse(localStorage.getItem(VOL_KEY)||'{}');if(typeof v.music==='number')VOL.music=Math.max(0,Math.min(1,v.music));if(typeof v.speak==='number')VOL.speak=Math.max(0,Math.min(1,v.speak));}catch(e){}
+function saveVol(){try{localStorage.setItem(VOL_KEY,JSON.stringify(VOL));}catch(e){}}
 const SND=new Audio('audio/talk.aac');SND.preload='auto';let unlocked=false;
 function unlock(){if(unlocked)return;unlocked=true;SND.load();}
 ['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,unlock,{passive:true}));
-function blip(ch){if(!unlocked||!ch||/\s/.test(ch))return;try{const a=SND.cloneNode();a.volume=.5;a.play().catch(()=>{});}catch(e){}}
+function blip(ch){if(!unlocked||!ch||/\s/.test(ch)||VOL.speak<=0)return;try{const a=SND.cloneNode();a.volume=.5*VOL.speak;a.play().catch(()=>{});}catch(e){}}
 // ---- MUSIC ----
 const mkTrack=(srcs,loop)=>{const a=new Audio();a.preload='auto';a.loop=loop;a.volume=.5;srcs.forEach(u=>{const e=document.createElement('source');e.src=u;a.appendChild(e);});return a;};
 const MUS={menu:mkTrack(['audio/anza.aac'],true),boss:mkTrack(['audio/BIG_SHOT.aac','audio/BIGSHOT.aac'],false),loop:mkTrack(['audio/BIG_SHOT_loop.aac','audio/BIGSHOT_loop.aac'],true)};
+function applyVol(){for(const k in MUS)MUS[k].volume=.5*VOL.music;}applyVol();
 let wantMus='menu',bossDone=false;
 function applyMusic(){const act=wantMus==='menu'?'menu':wantMus==='boss'?(bossDone?'loop':'boss'):null;
  for(const k in MUS){const a=MUS[k];if(k===act){if(a.paused)a.play().catch(()=>{});}else if(!a.paused||a.currentTime>0){a.pause();a.currentTime=0;}}}
@@ -86,36 +97,78 @@ MUS.boss.addEventListener('ended',bossToLoop);
 setInterval(()=>{const a=MUS.boss;if(wantMus==='boss'&&!bossDone&&!a.paused&&isFinite(a.duration)&&a.duration>0&&a.currentTime>=a.duration-.06)bossToLoop();},25);
 ['pointerdown','pointerup','keydown','touchend','click'].forEach(ev=>addEventListener(ev,e=>{if(e.target&&e.target.closest&&e.target.closest('#menu button'))return;applyMusic();},{passive:true}));
 const SEQ=['normal','talk1','talk2','talk1'];
-let cont=null,asked,typing=false,fin=null,ty=null,tk=null,endless=false,score=0,introTok=0;
+let cont=null,asked,asked2,typing=false,fin=null,ty=null,tk=null,endless=false,score=0,introTok=0;
 function setSprite(k){$('sprite').src=IMG[k];}
 function clr(){clearInterval(ty);clearInterval(tk);typing=false;}
-function say(who,text,next,sd){sd=sd||30;clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent=who;$('name').style.display=who?'block':'none';$('txt').textContent='';$('choices').innerHTML='';$('more').style.display='none';cont=null;
+function say(who,text,next,sd,done){sd=sd||30;clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent=who;$('name').style.display=who?'block':'none';$('txt').textContent='';$('choices').innerHTML='';$('more').style.display='none';cont=null;
  let i=0;typing=true;
- fin=()=>{clr();$('txt').textContent=text;if(who==='Frank')setSprite('normal');$('more').style.display=next?'block':'none';cont=next||null;};
+ fin=()=>{clr();$('txt').textContent=text;if(who==='Frank')setSprite('normal');$('more').style.display=next?'block':'none';cont=next||null;if(done)done();};
  ty=setInterval(()=>{i++;$('txt').textContent=text.slice(0,i);blip(text[i-1]);if(i>=text.length)fin();},sd);
  if(who==='Frank'){let f=0;tk=setInterval(()=>{f=(f+1)%4;setSprite(SEQ[f]);},110*sd/30);}}
 function choose(text,opts){clr();$('bm').innerHTML='';$('txt').style.display='';$('dlg').style.display='block';$('name').textContent='Al';$('name').style.display='block';$('txt').textContent=text;$('more').style.display='none';cont=null;const c=$('choices');c.innerHTML='';opts.forEach(o=>{const b=document.createElement('button');b.textContent=o[0];if(o[2])b.className='evil';b.onclick=e=>{e.stopPropagation();o[1]();};c.appendChild(b);});}
 $('dlg').onclick=()=>{if(typing)fin();else if(cont)cont();};
-const Q=[["Who are you?","Me? Just a totally normal guy named Frank.\nNothing suspicious. Ignore the cape."],["What's in the sack?","Accordions. Stolen ones.\nI mean... borrowed. Forever."],["Nice weather, huh?","I make it cloudy on purpose.\nSunshine makes people polka. I HATE polka."],["Got any hobbies?","Banning fun. Turning all music into elevator jazz.\nBwahaha."]];
-function hub(){const o=Q.map((q,i)=>[(asked.has(i)?'✔ ':'')+q[0],()=>ask(i)]);if(asked.size>=3)o.push(['He is clearly evil. Polka time!',fight,true]);choose('(What should I ask him?)',o);}
-function ask(i){asked.add(i);say('Frank',Q[i][1],hub);}
+const HIST_INTRO=`In late July 1919, Chicago broke into one of the worst episodes of racial violence in American history. The riot began on July 27 and continued in waves until early August, leaving 38 people dead, of which 23 were black and 15 were white, 537 injured, and roughly a thousand, mostly Black, residents homeless. It was the deadliest outbreak of the "Red Summer" of 1919, when violence against black people flared in dozens of cities. The immediate spark was small, but the conditions that made it so terrible were building for a long time before that.`;
+const HIST_Q=[
+["What led to the Chicago Riots?",[
+`Well the direct trigger was the death of Eugene Williams, a 17-year-old Black teenager whose raft drifted across the "line" that divided the 29th Street beach. A white man on the shore threw rocks at him, preventing him from coming to shore and causing Williams to drown. When a white police officer refused to arrest the man responsible and instead chose to arrest a black man who had thrown a punch at the killer, which turned the crowd's anger into violence.`,
+`There was also the Great Migration that brought tens of thousands of Black Southerners to Chicago in search of industrial work and an escape from the Jim Crow laws, and the city's Black population roughly doubled between 1910 and 1920. This growth collided with a rigid housing market. Restrictive covenants, real estate practices, and social pressure confined Black residents to the narrow, overcrowded "Black Belt" on the South Side. As Black families pushed outward in search of decent housing, white neighbors and "improvement associations" resisted, and dozens of Black homes were firebombed in the years before the riot.`,
+`Labor competition also added to the tension. Many Black workers had been hired into the stockyards and packing plants during World War I, sometimes as strikebreakers, and most white-dominated unions excluded them or treated them with hostility. When soldiers returned home in 1919 and the wartime economy shrank, white workers feared for their jobs, while Black workers, including veterans who had fought for democracy abroad, were less willing to accept second-class treatment. Institutions only made matters worse. The police were widely seen as biased, and the press often dramatized racial incidents. White neighborhood athletic clubs, which functioned partly as street gangs, organized attacks on Black residents, while politics fueled ethnic and racial rivalries.`]],
+["What happened after the Riots?",[
+`The immediate effects were seen in lives and property. Six thousand state militia troops eventually helped restore order, and a heavy rainfall also helped end the violence. Black residents bore the heaviest losses, including most of the homes destroyed. Criminal prosecutions afterward were uneven, and few white rioters faced serious consequences.`]],
+["What did the gov change after the fact?",[
+`Governor Frank Lowden appointed the Chicago Commission on Race Relations, which produced the 1922 report The Negro in Chicago. It was a landmark study that documented housing discrimination, employment barriers, and police bias, and it recommended reforms. Yet its recommendations were largely ignored. Restrictive covenants spread, and residential segregation hardened over the following decades, leaving the Black Belt more tightly bound than before. The riots also reshaped Black political and cultural life. Anti-lynching and civil rights organizing gained momentum, and a stronger belief of self-defense took hold, captured in works like Claude McKay's poem "If We Must Die." Within Chicago, Black political organization deepened, eventually contributing to the rise of figures such as Oscar De Priest, who in 1928 became the first Black congressman elected from the North. Distrust between Black workers and organized labor persisted, and many Black workers concluded that employers were a more reliable, if self-interested, ally than white-led unions.`]]];
+const HIST_SUM=`So you see, Al. The 1919 riots were not a spontaneous outburst but the product of migration, housing segregation, labor competition, and institutional bias reaching a breaking point. Its effects were just as lasting, the failure to act on its lessons entrenched segregation in Chicago, while the anger and organizing it inspired helped lay groundwork for the civil rights movement.`;
+const AL_TOPIC="Well, now I definitely know a lot more about the Chicago Riots, wanna talk about...";
+// split long passages into click-through pages so the dialog box never overflows
+function pages(t,max){max=max||260;const ss=t.match(/[^.!?]*[.!?]+["']?(?:\s+|$)|[^.!?]+$/g)||[t];const out=[];let c='';ss.forEach(x=>{x=x.trim();if(!x)return;if(c&&(c+' '+x).length>max){out.push(c);c=x;}else c=c?c+' '+x:x;});if(c)out.push(c);return out;}
+function chain(who,paras,next,sd){const p=[].concat(...paras.map(x=>pages(x)));(function go(i){say(who,p[i],i<p.length-1?()=>go(i+1):next,sd);})(0);}
+function hub(){const o=HIST_Q.map((q,i)=>[(asked.has(i)?'✔ ':'')+q[0],()=>ask(i)]);choose('(What should I ask him?)',o);}
+function ask(i){asked.add(i);chain('Frank',HIST_Q[i][1],afterAsk,22);}
+function afterAsk(){if(asked.size>=HIST_Q.length)choose('(You have heard all three. What now?)',[['Reread the 3',hub],['Continue',summary]]);else hub();}
+function summary(){chain('Frank',[HIST_SUM],()=>say('Al',AL_TOPIC,null,30,()=>topics(true)),22);}
+function topics(first){
+ const o=[['Polka',()=>{asked2.add(0);say('Frank','Polka? I HATE polka...',()=>topics());}],['Accordions',()=>{asked2.add(1);say('Frank','Accordions? That thing used to make the WORST music ever?',()=>topics());}]];
+ o.forEach((x,i)=>{if(asked2.has(i))x[0]='✔ '+x[0];});
+ if(asked2.size>=2)o.push(['There will be no polka disrespect in my presence, DESTROY HIM!',fight,true]);
+ choose(first?AL_TOPIC:'(What do you say?)',o);}
 function fight(){const tok=++introTok;setMusic('boss');
  // [text, ms]  -- slots add up to 13000ms of Frank talking, then the arena shows for 4s before the first attack
  const L=[["You dare?! Fine. Dodge THIS!",2500],["Do you know how long I have waited\nto ruin someone's accordion solo?",3600],["Years, Al. YEARS. Of elevator jazz.\nOf cloudy skies. Of polka-free roads!",4000],["But none of that matters now.\nPrepare yourself.",2900]];
  let i=0;(function step(){if(tok!==introTok)return;if(i>=L.length){startBattle(true);return;}const t=L[i][0],ms=L[i][1];i++;say('Frank',t,null,Math.max(20,Math.min(60,Math.floor(ms*.75/t.length))));setTimeout(step,ms);})();}
-function nameQ(){choose('(What do you say?)',[['Tell him your real name',()=>say('Al','It is Al.',()=>say('Frank','Hmmm. Well, my name is Frank Oliva.\nNow, what do you want?',hub))],["I ain't tellin you my name",()=>say('Al',"I ain't tellin you my name.",()=>say('Frank',"Okay, then I'll just call you Yucky Hobo Man.\nNow, what do you want?",hub))]]);}
-function start(){asked=new Set();endless=false;$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('','You stroll down a road with your accordion.\nA figure blocks the way...',()=>say('Frank','Well, well, well. An accordion player.\nWhat is your name, stranger?',nameQ));}
+function historyIntro(){say('Frank',"Hmm... I'm Frank Oliva. You might be a dirty polka player, but I guess I can teach you some history.",()=>say('Al',"Hey! Polka isn't dirty... but I do want to learn some history. What about the Chicago Riots?",()=>say('Frank',"Yeah, alright that's a pretty good topic, what do you wanna learn about it?",()=>chain('Frank',[HIST_INTRO],hub,22))));}
+function nameQ(){choose('(What do you say?)',[['Tell him your real name',()=>say('Al',"I'm Al... WEIRD AL",historyIntro)],["I ain't tellin you my name",()=>say('Al',"I ain't tellin you my name.",()=>say('Frank',"Okay, then I'll just call you Yucky Hobo Man.",historyIntro))]]);}
+function start(){asked=new Set();asked2=new Set();endless=false;$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';setSprite('normal');say('','You stroll down a road with your accordion.\nA figure blocks the way...',()=>say('Frank','Well, well, well. An accordion player.\nWhat is your name, stranger?',nameQ));}
 function frankReturns(){const s=$('sprite');s.classList.remove('spin','big','shake','bt');s.style.display='';setSprite('normal');say('Frank','...As I lay here dying...\nCan I at least have your spicy chicken sandwich?',sandwichQ);}
-function sandwichQ(){choose('(Give Frank your spicy chicken sandwich?)',[['Yes, give him the sandwich',()=>say('Al','Here. One spicy chicken sandwich.',()=>say('Frank','Mmm... SPICY. Thank you, stranger.\nNow I can die in peace...',()=>{$('sprite').style.display='none';say('','— THE END —  (click to return to the menu)',toMenu,60);}))],["No. It's mine.",()=>say('Al',"No. It's my sandwich.",()=>say('Frank','WRONG ANSWER.\nNow you polka... FOREVER!',()=>say('Al','*grips accordion*\n(Arrows/WASD or drag to dodge. Tap/Space to strike, then heal with gabagool!)',startEndless))),true]]);}
+function sandwichQ(){choose('(Give Frank your spicy chicken sandwich?)',[['Yes, give him the sandwich',()=>say('Al','Here. One spicy chicken sandwich.',()=>say('Frank','Mmm... SPICY. Thank you, stranger.\nNow I can die in peace...',()=>{$('sprite').style.display='none';say('','— THE END —  (click to return to the menu)',toMenu,60);}))],["No. It's mine.",()=>say('Al',"No. It's my sandwich.",()=>say('Frank','WRONG ANSWER.\nNow you polka... FOREVER!',()=>say('Al','*grips accordion*\n(Arrows/WASD to dodge. Tap/Space to strike, then heal with gabagool!)',startEndless))),true]]);}
 
 // ---- MAIN MENU ----
 const BEAT_KEY='frank_beat';
 function hasBeaten(){let c=false,l=false;try{c=new RegExp('(?:^|; )'+BEAT_KEY+'=1').test(document.cookie);}catch(e){}try{l=localStorage.getItem(BEAT_KEY)==='1';}catch(e){}return c||l;}
 function markBeaten(){try{document.cookie=BEAT_KEY+'=1; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(BEAT_KEY,'1');}catch(e){}}
-function showWarn(on){$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';}
+function showWarn(on){$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';$('opt').style.display='none';}
 function openMain(){showWarn(false);$('menu').style.display='flex';setMusic('menu');}
 function closeMain(){showWarn(false);$('menu').style.display='none';setMusic(null);}
 function toMenu(){clr();$('dlg').style.display='none';$('choices').innerHTML='';$('bm').innerHTML='';$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';endless=false;openMain();}
+function mkSlider(label,key){
+ const row=document.createElement('div');row.className='orow';
+ const lab=document.createElement('div');lab.className='olab';
+ const sl=document.createElement('div');sl.className='sl';
+ const tr=new Image();tr.className='tr';tr.src='image/slider.avif';tr.draggable=false;tr.alt='';
+ const kn=new Image();kn.className='kn';kn.src='image/rock.avif';kn.draggable=false;kn.alt='';
+ sl.appendChild(tr);sl.appendChild(kn);row.appendChild(lab);row.appendChild(sl);
+ const paint=()=>{kn.style.left=(VOL[key]*100)+'%';lab.textContent=label+'  '+Math.round(VOL[key]*100)+'%';};
+ const setFrom=e=>{const r=sl.getBoundingClientRect();VOL[key]=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));paint();applyVol();saveVol();};
+ let dragging=false;
+ sl.addEventListener('pointerdown',e=>{dragging=true;try{sl.setPointerCapture(e.pointerId);}catch(_){}setFrom(e);});
+ sl.addEventListener('pointermove',e=>{if(dragging)setFrom(e);});
+ const end=e=>{if(!dragging)return;dragging=false;if(key==='speak')blip('a');};
+ sl.addEventListener('pointerup',end);sl.addEventListener('pointercancel',()=>{dragging=false;});
+ paint();$('sliders').appendChild(row);
+}
+mkSlider('MUSIC','music');mkSlider('SPEAKING','speak');
+function showOpt(on){$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
+$('optBtn').onclick=()=>showOpt(true);
+$('optBack').onclick=()=>showOpt(false);
 $('playBtn').onclick=()=>{closeMain();start();};
 $('hdBtn').onclick=()=>{if(hasBeaten()){closeMain();startEndless();}else showWarn(true);};
 $('warnOk').onclick=()=>{closeMain();start();};
@@ -133,8 +186,10 @@ function revive(){const s=$('sprite');s.classList.remove('spin','big','shake');s
 
 // ---- BOSS BATTLE ----
 const cv=$('cv'),g=cv.getContext('2d'),W=360,AX=80,AY=50,AW=200,AH=150;
-const TAUNTS=["Feel my cloudy wrath!","You call that polka?!","My cape is fireproof!","Stop being so cheerful!","Nobody polkas on my road!","This cape is dry clean only!","Is that an accordion or a sandwich?"];
-const BMAX=300,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},drag=null,first=false;
+const TAUNTS=["Haha, Polka dies today!!!","Al? What a weirdo.","Polka was never good!!!","You call that polka?"];
+const HD_TAUNTS=["GIMMIE THE SANDWICH YOU POLKA PLAYING HOOLIGAN","RAAAGGHHHH SPICY CHICKEN SANDWICH","NOW I CAN'T EAT LUNCH AND IM GONNA BLAME POLKA","I HATE ALL ACCORDIAN PLAYERS, KILL ALL ACCORDIAN PLAYERS"];
+let curT=TAUNTS[0];
+const BMAX=300,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},first=false;
 const R=Math.random;
 function startBattle(intro){clr();$('dlg').style.display='none';$('battle').style.display='block';$('sprite').classList.add('bt');setSprite('ref');php=PMAX;bhp=BMAX;gab=5;inv=0;resize();rnd_=0;tauntT=0;nextRound();first=intro===true;if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
 function resize(){const k=Math.max(1,cv.clientWidth/W*(window.devicePixelRatio||1));const w=Math.round(W*k);if(cv.width!==w){cv.width=w;cv.height=Math.round(215*k);}sc=cv.width/W;}
@@ -147,9 +202,9 @@ function goFight(){if(st!=='menu')return;hideMenu();st='bar';tm=0;}
 function itemsUI(msg){st='items';$('bm').innerHTML='';$('txt').style.display='';$('txt').textContent=(msg?msg+'\n':'')+'Gabagool heals 30 HP.\n'+status();const b=mbtn('Eat gabagool  (x'+gab+')',eat);if(gab<=0||php>=PMAX)b.disabled=true;mbtn('Back',showMenu);}
 function goHeal(){if(st!=='menu')return;itemsUI('');}
 function eat(){if(st!=='items'||gab<=0||php>=PMAX)return;gab--;const o=php;php=Math.min(PMAX,php+30);itemsUI('+'+(php-o)+' HP!');}
-function nextRound(){st='talk';tm=0;bl=[];sp=0;hx=AX+AW/2;hy=AY+AH/2;}
+function nextRound(){const pool=endless?TAUNTS.concat(HD_TAUNTS):TAUNTS;let t;do{t=pool[Math.floor(R()*pool.length)];}while(t===curT&&pool.length>1);curT=t;st='talk';tm=0;bl=[];sp=0;hx=AX+AW/2;hy=AY+AH/2;}
 function endBattle(){run=false;$('bubble').style.display='none';$('battle').style.display='none';$('sprite').classList.remove('bt');setSprite('normal');}
-function win(){endBattle();if(endless){score++;saveScore();}else{markBeaten();setMusic(null);}say('Frank','Noooo, not the polk—',death,60);}
+function win(){endBattle();if(endless){score++;saveScore();death();}else{markBeaten();setMusic(null);say('Frank','There really were two hits. You hitting me, and me hitting the floor',death,40);}}
 function death(){$('dlg').style.display='none';const s=$('sprite');setSprite('taunt');s.classList.add('spin');let bi;
  setTimeout(()=>{s.classList.remove('spin');s.classList.add('big');let n=0;s.src=BOOM+'?'+Date.now();bi=null;},1600);
  setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',frankReturns,60);},2400);}
@@ -165,9 +220,9 @@ function spawn(dt){const m=Math.min(1.8,1+.12*rnd_),p=rnd_%7;sp+=dt;
  if(p===6&&sp>450/m){sp=0;const e=Math.floor(R()*4),s=1.9*m;if(e===0)bl.push({x:AX+R()*AW,y:AY,vx:0,vy:s});else if(e===1)bl.push({x:AX+R()*AW,y:AY+AH,vx:0,vy:-s});else if(e===2)bl.push({x:AX,y:AY+R()*AH,vx:s,vy:0});else bl.push({x:AX+AW,y:AY+R()*AH,vx:-s,vy:0});}}
 const bub=$('bubble');
 function update(dt){tm+=dt;
- if(st==='talk'){const s=TAUNTS[rnd_%TAUNTS.length],n=Math.min(s.length,Math.floor(tm/30));bub.style.display='block';if(bub.dataset.n!=n){bub.dataset.n=n;bub.textContent=s.slice(0,n);if(n>0)blip(s[n-1]);}}else bub.style.display='none';
+ if(st==='talk'){const s=curT,n=Math.min(s.length,Math.floor(tm/30));bub.style.display='block';if(bub.dataset.n!=n){bub.dataset.n=n;bub.textContent=s.slice(0,n);if(n>0)blip(s[n-1]);}}else bub.style.display='none';
  if(tauntT>0){tauntT-=dt;if(tauntT<=0)setSprite('ref');}
- if(st==='talk'&&tm>(first?4000:1800)){st='dodge';tm=0;first=false;}
+ if(st==='talk'&&tm>Math.max(first?4000:1800,curT.length*30+900)){st='dodge';tm=0;first=false;}
  else if(st==='dodge'){const v=2.6*dt/16;
   if(keys.arrowleft||keys.a)hx-=v;if(keys.arrowright||keys.d)hx+=v;if(keys.arrowup||keys.w)hy-=v;if(keys.arrowdown||keys.s)hy+=v;
   hx=Math.max(AX+6,Math.min(AX+AW-6,hx));hy=Math.max(AY+6,Math.min(AY+AH-6,hy));
@@ -185,7 +240,7 @@ function draw(){g.setTransform(sc,0,0,sc,0,0);g.imageSmoothingEnabled=false;g.fi
  if(st!=='menu'&&st!=='items'){g.lineWidth=3;g.strokeRect(AX,AY,AW,AH);
  g.save();g.beginPath();g.rect(AX,AY,AW,AH);g.clip();bl.forEach(b=>g.drawImage(ROCK,Math.round(b.x-9),Math.round(b.y-10),18,20));g.restore();}
  if(st!=='bar'&&st!=='hit'&&st!=='menu'&&st!=='items'&&st!=='ate'&&!(st==='dodge'&&inv>0&&Math.floor(tm/80)%2)){g.drawImage(HEART,Math.round(hx-9),Math.round(hy-10),18,20);}
- if(st==='talk'&&first){txt('ARROWS / WASD / DRAG',AX+AW/2,AY+24,'#ff0',11);txt('TO DODGE',AX+AW/2,AY+38,'#ff0',11);}
+ if(st==='talk'&&first){txt('ARROWS / WASD',AX+AW/2,AY+24,'#ff0',11);txt('TO DODGE',AX+AW/2,AY+38,'#ff0',11);}
  if(st==='bar'){g.strokeStyle='#fff';g.strokeRect(AX+10,AY+AH/2-14,AW-20,28);g.fillStyle='#3c3';g.fillRect(AX+AW/2-15,AY+AH/2-12,30,24);g.fillStyle='#fff';g.fillRect(AX+10+mk*(AW-20)-2,AY+AH/2-18,4,36);txt('TAP / SPACE!',AX+AW/2,AY+20,'#ff0',13);}
  if(st==='hit')txt('-'+dmg,AX+AW/2,AY+AH/2,'#f55',30);
  if(st==='ate')txt('+'+healed+' HP',AX+AW/2,AY+AH/2,'#5f5',30);
@@ -193,9 +248,7 @@ function draw(){g.setTransform(sc,0,0,sc,0,0);g.imageSmoothingEnabled=false;g.fi
 function loop(now){if(!run)return;const dt=Math.min(50,now-last);last=now;update(dt);draw();requestAnimationFrame(loop);}
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k===' '){e.preventDefault();strike();}if(st==='menu'){if(k==='f'||k==='1')goFight();if(k==='h'||k==='2')goHeal();}else if(st==='items'){if(k==='g'||k==='1')eat();if(k==='b'||k==='escape')showMenu();}keys[k]=1;});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0;});
-cv.addEventListener('pointerdown',e=>{if(st==='bar')strike();drag={x:e.clientX,y:e.clientY};});
-addEventListener('pointerup',()=>drag=null);
-cv.addEventListener('pointermove',e=>{if(!drag||st!=='dodge')return;const k=W/cv.clientWidth;hx+=(e.clientX-drag.x)*k;hy+=(e.clientY-drag.y)*k;drag={x:e.clientX,y:e.clientY};});
+cv.addEventListener('pointerdown',e=>{if(st==='bar')strike();});
 // ---- DEBUG: press F three times fast -> fight Frank at 1 HP ----
 let fT=[];
 function debugFight(){introTok++;clr();closeMain();setMusic('boss');$('blackout').classList.remove('on');$('choices').innerHTML='';const s=$('sprite');s.classList.remove('spin','big','shake');s.style.display='';startBattle();bhp=1;}
