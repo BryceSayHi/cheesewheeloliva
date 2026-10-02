@@ -228,9 +228,15 @@ function revive(){const s=$('sprite');s.classList.remove('spin','big','shake');s
 
 // ---- BOSS BATTLE ----
 const cv=$('cv'),g=cv.getContext('2d'),W=360,AX=80,AY=50,AW=200,AH=150;
+<<<<<<< Updated upstream
 const TAUNTS=["Haha, Polka dies today!!!","Al? What a weirdo.","Polka was never good!!!","You call that polka?"];
 const HD_TAUNTS=["GIMMIE THE SANDWICH YOU POLKA PLAYING HOOLIGAN","RAAAGGHHHH SPICY CHICKEN SANDWICH","NOW I CAN'T EAT LUNCH AND IM GONNA BLAME POLKA","I HATE ALL ACCORDIAN PLAYERS, KILL ALL ACCORDIAN PLAYERS"];
 let curT=TAUNTS[0],hdLvl=0;
+=======
+const TAUNTS=["Haha, Polka dies today!!!","Al? What a weirdo.","Polka was never good!!!","You call that polka?","Go back to albuquerque!!","Not even normal!"];
+const HD_TAUNTS=["GIMMIE THE SANDWICH YOU POLKA PLAYING HOOLIGAN","Polka was never good!!!","You call that polka?","RAAAGGHHHH SPICY CHICKEN SANDWICH","NOW I CAN'T EAT LUNCH AND IM GONNA BLAME POLKA","I HATE ALL ACCORDIAN PLAYERS, KILL ALL ACCORDIAN PLAYERS"];
+let curT=TAUNTS[0];
+>>>>>>> Stashed changes
 const BMAX=300,PMAX=100;let sc=1,gab=5,healed=0,run=false,st,tm,rnd_,php,bhp,inv,hx,hy,bl,sp,mk,dmg,last,tauntT=0,keys={},first=false;
 const R=Math.random;
 function startBattle(intro){calm();clr();$('dlg').style.display='none';$('battle').style.display='block';$('sprite').classList.add('bt');setSprite('ref');php=PMAX;bhp=BMAX;if(!endless)gab=5;inv=0;resize();rnd_=0;tauntT=0;nextRound();first=intro===true;if(!run){run=true;last=performance.now();requestAnimationFrame(loop);}}
