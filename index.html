@@ -64,6 +64,8 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 .sl{position:relative;width:min(160px,36vw);margin:0 auto;cursor:pointer;touch-action:none;user-select:none}
 .sl img.tr{display:block;width:100%;height:auto;image-rendering:pixelated;pointer-events:none}
 .sl img.kn{position:absolute;top:50%;width:17px;height:auto;image-rendering:pixelated;transform:translate(-50%,-50%);pointer-events:none}
+#mg{display:none;flex-direction:column;align-items:center;width:min(480px,100%)}#mg h2{margin:0 0 min(5vh,32px);font:inherit;font-size:clamp(1.6rem,7vw,2.2rem);font-weight:normal}#mg button{max-width:100%}
+#mgWrap{display:none;position:absolute;z-index:10;top:0;left:0;right:0;bottom:0;background:#000}#mgFrame{width:100%;height:100%;border:0;display:block}#mgX{position:absolute;z-index:11;top:6px;right:6px;font:inherit;font-size:1rem;padding:2px 10px;background:#000;color:#fff;border:2px solid #fff;opacity:.7;cursor:pointer}#mgX:hover{opacity:1}
 #load{font-size:.9rem;min-height:1.2em;color:#aaa}
 #menu button:disabled{opacity:.4;cursor:default}
 #ver{position:fixed;z-index:9;left:calc(6px + env(safe-area-inset-left,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));font-size:.75rem;color:#fff;opacity:.5;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
@@ -80,7 +82,8 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <div id="battle"><canvas id="cv" width="360" height="215"></canvas></div>
 <div id="score"></div>
 <div id="blackout"></div>
-<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div></div>
+<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="mgBtn">MINIGAMES</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="mg"><h2>MINIGAMES</h2><button id="mgRiots">INITIATE THE CHICAGO RIOTS</button><button id="mgBack">BACK</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div></div>
+<div id="mgWrap"><iframe id="mgFrame" title="minigame" allow="autoplay"></iframe><button id="mgX">✕</button></div>
 </div>
 <script>
 const IMG={normal:'image/frank_normal.avif',talk1:'image/frank_talk1.avif',talk2:'image/frank_talk2.avif',taunt:'image/frank_taunt.avif',ref:'image/frank_sans.avif'};
@@ -177,7 +180,7 @@ function sandwichQ(){choose('(Give Frank your spicy chicken sandwich?)',[['Yes, 
 const BEAT_KEY='frank_beat';
 function hasBeaten(){let c=false,l=false;try{c=new RegExp('(?:^|; )'+BEAT_KEY+'=1').test(document.cookie);}catch(e){}try{l=localStorage.getItem(BEAT_KEY)==='1';}catch(e){}return c||l;}
 function markBeaten(){try{document.cookie=BEAT_KEY+'=1; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(BEAT_KEY,'1');}catch(e){}}
-function showWarn(on){$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';$('opt').style.display='none';}
+function showWarn(on){$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';$('opt').style.display='none';}
 function openMain(){calm();showWarn(false);$('menu').style.display='flex';setMusic('menu');}
 function closeMain(){calm();showWarn(false);$('menu').style.display='none';setMusic(null);}
 function toMenu(){clr();$('dlg').style.display='none';$('choices').innerHTML='';$('bm').innerHTML='';$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';endless=false;openMain();}
@@ -198,7 +201,12 @@ function mkSlider(label,key){
  paint();$('sliders').appendChild(row);
 }
 mkSlider('MUSIC','music');mkSlider('SPEAKING','speak');
-function showOpt(on){$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
+function showOpt(on){$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
+function showMg(on){$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display='none';$('mg').style.display=on?'flex':'none';}
+function openRiots(){$('mgFrame').src='riots.html';$('mgWrap').style.display='block';setMusic(null);}
+function closeRiots(){$('mgWrap').style.display='none';$('mgFrame').src='about:blank';setMusic('menu');}
+$('mgBtn').onclick=()=>showMg(true);$('mgBack').onclick=()=>showMg(false);$('mgRiots').onclick=openRiots;$('mgX').onclick=closeRiots;
+addEventListener('message',e=>{if(e.data==='mg-exit'&&e.source===$('mgFrame').contentWindow)closeRiots();});
 $('optBtn').onclick=()=>showOpt(true);
 $('optBack').onclick=()=>showOpt(false);
 $('playBtn').onclick=()=>{closeMain();start();};
@@ -289,6 +297,6 @@ addEventListener('keydown',e=>{if(e.key.toLowerCase()!=='f'||e.repeat)return;con
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.18</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.19</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
