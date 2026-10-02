@@ -46,14 +46,14 @@ const MON=ld('image/monster.avif'),RAFT=ld('image/raft.avif'),ROCK=ld('image/roc
 let mode='title',hp=100,thrown=0,t=0,reload=0,aim=null,mon,rocks=[],parts=[],txs=[],sink=0,sinkT=0,last=performance.now();
 // logical resolution follows the window shape so the scene fills the whole screen
 function fit(){const a=innerWidth/Math.max(1,innerHeight);let w=Math.round(270*a),h=270;if(w<360){w=360;h=Math.min(520,Math.round(360/a));}W=Math.min(640,w);H=h;cv.width=W;cv.height=H;WY=H-74;DY=WY-18;
- if(mon){mon.tx=Math.min(mon.tx,maxX());if(mon.in)mon.x=Math.min(mon.x,maxX());if(mode==='title')mon.x=W*.78;}}
+ if(mon){mon.tx=Math.min(mon.tx,maxX());if(mon.in)mon.x=Math.min(mon.x,maxX());else mon.x=W+60;}}
 const minX=()=>W*.45,maxX=()=>W-30;
 // ---- sound (uses the main game's saved speaking volume) ----
 let AC=null,VK=1;try{const v=JSON.parse(localStorage.getItem('frank_vol')||'{}');if(typeof v.speak==='number')VK=v.speak;}catch(e){}
 function sfx(a,b,d,type,v){if(!AC||VK<=0)return;try{const n=AC.currentTime,o=AC.createOscillator(),q=AC.createGain();o.type=type||'square';o.frequency.setValueAtTime(a,n);o.frequency.exponentialRampToValueAtTime(Math.max(20,b),n+d);q.gain.setValueAtTime(.12*VK*(v||1),n);q.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(q);q.connect(AC.destination);o.start();o.stop(n+d);}catch(e){}}
 // ---- state ----
 function reset(){txs.forEach(x=>x.el&&x.el.remove());hp=100;thrown=0;reload=0;aim=null;rocks=[];parts=[];txs=[];sink=0;sinkT=0;mon={x:W+60,tx:W*.78,wait:0,kx:0,hurt:0,in:false,fx:0,fy:0,vy:0,rot:0};}
-fit();reset();mon.x=W*.78;mon.in=true;
+fit();reset();
 addEventListener('resize',fit);
 function startGame(){AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state!=='running')AC.resume().catch(()=>{});reset();mode='play';$('title').classList.remove('on');$('win').classList.remove('on');}
 function exitGame(){if(parent!==window)parent.postMessage('mg-exit','*');else history.back();}
