@@ -1,4 +1,4 @@
-const V='frank-v3';
+const V='frank-v4';
 const FILES=['./','index.html','riots.html','image/monster.avif','image/player.avif','image/x.avif','image/raft.avif','font/terminal-font.ttf','lang/dialogue.txt','audio/talk.aac','gif/explode.gif',
 'image/frank_normal.avif','image/frank_talk1.avif','image/frank_talk2.avif','image/frank_taunt.avif','image/frank_sans.avif',
 'image/heart.avif','image/rock.avif','image/fight.avif','image/heal.avif',

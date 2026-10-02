@@ -12,17 +12,25 @@ button,h1,h2,p{font-family:"CustomFont",monospace}
 #cv{width:100%;height:100%;display:block;object-fit:contain;image-rendering:pixelated;touch-action:none}
 .ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:calc(var(--u)*2.2);background:rgba(0,0,0,.7)}
 .ov.on{display:flex}
-.ov h1,.ov h2{margin:0;font:inherit;font-weight:normal;font-size:calc(var(--u)*5.4);line-height:1.1;padding:calc(var(--u)*.4) calc(var(--u)*3);border:14px solid transparent;border-image:url(image/text_box.avif) 6 stretch;background:#000}
+.ov h1,.ov h2{margin:0;font:inherit;font-weight:normal;font-size:calc(var(--u)*5.4);line-height:1.1;padding:calc(var(--u)*.4) calc(var(--u)*3);border:14px solid transparent;border-image:url(image/text_box.avif) 6 stretch;background:#000;background-clip:padding-box}
 .ov h2{font-size:calc(var(--u)*4.4)}
 .ov p{margin:0;font-size:calc(var(--u)*2.4);line-height:1.4}
-.ov button{font:inherit;font-size:calc(var(--u)*3);padding:calc(var(--u)*.2) calc(var(--u)*2);border:10px solid transparent;border-image:url(image/choice_box.avif) 6 stretch;background:#000;color:#fff;cursor:pointer;image-rendering:pixelated}
+.ov button{font:inherit;font-size:calc(var(--u)*3);padding:calc(var(--u)*.2) calc(var(--u)*2);border:10px solid transparent;border-image:url(image/choice_box.avif) 6 stretch;background:#000;background-clip:padding-box;color:#fff;cursor:pointer;image-rendering:pixelated}
 .ov button:hover{background:#222}
 .row{display:flex;gap:calc(var(--u)*2)}
+#hud{position:absolute;top:calc(var(--u)*1.5 + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}
+#bar{width:calc(var(--u)*30);height:calc(var(--u)*2);box-sizing:border-box;border:3px solid #fff;margin:0 auto}
+#hpf{display:block;height:100%;width:100%;background:#e33}
+#mname,#rocks,.pop{font-family:"CustomFont",monospace;text-shadow:2px 0 #000,-2px 0 #000,0 2px #000,0 -2px #000,2px 2px #000,-2px -2px #000,2px -2px #000,-2px 2px #000}
+#mname{font-size:calc(var(--u)*2.2);margin-top:calc(var(--u)*.6)}
+#rocks{position:absolute;pointer-events:none;top:calc(var(--u)*1.5 + env(safe-area-inset-top,0px));left:calc(var(--u)*1.5 + env(safe-area-inset-left,0px));font-size:calc(var(--u)*2.4)}
+.pop{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none}
 </style>
 </head>
 <body>
 <div id="wrap">
 <canvas id="cv"></canvas>
+<div id="hud"><div id="bar"><i id="hpf"></i></div><div id="mname">MONSTER</div></div><div id="rocks">ROCKS: 0</div>
 <div class="ov on" id="title"><h1>INITIATE THE<br>CHICAGO RIOTS</h1><p>DRAG BACK TO AIM<br>RELEASE TO THROW A ROCK<br>HEADSHOTS HURT THE MOST</p><button id="go">START</button></div>
 <div class="ov" id="win"><h2>THE MONSTER IS DEAD.</h2><p>THE RIOTS HAVE BEGUN.<br><span id="wn"></span></p><div class="row"><button id="again">AGAIN</button><button id="exit">EXIT</button></div></div>
 </div>
@@ -30,6 +38,7 @@ button,h1,h2,p{font-family:"CustomFont",monospace}
 try{document.fonts.load('12px CustomFont');}catch(e){}
 const GR=.17,K=.13,MAXD=85,PW=30,PH=63,PX=16;
 let W=480,H=270,WY=196,DY=178;
+const wrap=document.getElementById('wrap');let hpShown=-1,rkShown=-1;
 const cv=document.getElementById('cv'),g=cv.getContext('2d');
 const $=id=>document.getElementById(id);
 const ld=s=>{const i=new Image();i.src=s;return i;};
@@ -43,7 +52,7 @@ const minX=()=>W*.45,maxX=()=>W-30;
 let AC=null,VK=1;try{const v=JSON.parse(localStorage.getItem('frank_vol')||'{}');if(typeof v.speak==='number')VK=v.speak;}catch(e){}
 function sfx(a,b,d,type,v){if(!AC||VK<=0)return;try{const n=AC.currentTime,o=AC.createOscillator(),q=AC.createGain();o.type=type||'square';o.frequency.setValueAtTime(a,n);o.frequency.exponentialRampToValueAtTime(Math.max(20,b),n+d);q.gain.setValueAtTime(.12*VK*(v||1),n);q.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(q);q.connect(AC.destination);o.start();o.stop(n+d);}catch(e){}}
 // ---- state ----
-function reset(){hp=100;thrown=0;reload=0;aim=null;rocks=[];parts=[];txs=[];sink=0;sinkT=0;mon={x:W+60,tx:W*.78,wait:0,kx:0,hurt:0,in:false,fx:0,fy:0,vy:0,rot:0};}
+function reset(){txs.forEach(x=>x.el&&x.el.remove());hp=100;thrown=0;reload=0;aim=null;rocks=[];parts=[];txs=[];sink=0;sinkT=0;mon={x:W+60,tx:W*.78,wait:0,kx:0,hurt:0,in:false,fx:0,fy:0,vy:0,rot:0};}
 fit();reset();mon.x=W*.78;mon.in=true;
 addEventListener('resize',fit);
 function startGame(){AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state!=='running')AC.resume().catch(()=>{});reset();mode='play';$('title').classList.remove('on');$('win').classList.remove('on');}
@@ -53,7 +62,8 @@ addEventListener('keydown',e=>{if(e.key==='Escape')exitGame();});
 window.focus();
 const raftY=()=>WY-10+Math.sin(t/40)*2.5+sink;
 // ---- aiming (drag back, release to throw) ----
-function pos(e){const r=cv.getBoundingClientRect(),s=Math.min(r.width/W,r.height/H),ox=(r.width-W*s)/2,oy=(r.height-H*s)/2;return{x:(e.clientX-r.left-ox)/s,y:(e.clientY-r.top-oy)/s};}
+function view(){const r=cv.getBoundingClientRect(),s=Math.min(r.width/W,r.height/H);return{s,ox:r.left+(r.width-W*s)/2,oy:r.top+(r.height-H*s)/2};}
+function pos(e){const v=view();return{x:(e.clientX-v.ox)/v.s,y:(e.clientY-v.oy)/v.s};}
 function dvec(){let dx=aim.sx-aim.cx,dy=aim.sy-aim.cy;const l=Math.hypot(dx,dy);if(l>MAXD){dx*=MAXD/l;dy*=MAXD/l;}return{x:dx,y:dy,l:Math.min(l,MAXD)};}
 const HX=PX+PW+2,HY=()=>DY-27;
 function hand(){if(!aim)return{x:HX,y:HY()};const d=dvec();return{x:HX-d.x*.4,y:HY()-d.y*.4};}
@@ -74,7 +84,7 @@ function circRect(cx,cy,r,x,y,w,h){const nx=Math.max(x,Math.min(cx,x+w)),ny=Math
 // ---- update ----
 function update(f){t+=f;if(reload>0)reload-=f;
  parts.forEach(p=>{p.x+=p.vx*f;p.y+=p.vy*f;p.vy+=.15*f;p.life-=f;});parts=parts.filter(p=>p.life>0);
- txs.forEach(x=>{x.y-=.5*f;x.life-=f;});txs=txs.filter(x=>x.life>0);
+ txs.forEach(x=>{x.y-=.5*f;x.life-=f;});txs=txs.filter(x=>{if(x.life>0)return true;if(x.el)x.el.remove();return false;});
  const m=mon,ry=raftY();
  if(mode==='play'){
   if(Math.abs(m.tx-m.x)>1)m.x+=Math.sign(m.tx-m.x)*(m.in?.45:1.2)*f;else{m.wait-=f;if(m.wait<=0){m.tx=minX()+Math.random()*(maxX()-minX());m.wait=30+Math.random()*60;}}
@@ -90,7 +100,6 @@ function update(f){t+=f;if(reload>0)reload-=f;
   if(r.x>W+40||r.x<-40||r.y>H+20)r.dead=1;});
  rocks=rocks.filter(r=>!r.dead);}
 // ---- draw ----
-function txt(s,x,y,c,sz,al){g.fillStyle=c||'#fff';g.font=(sz||12)+'px "CustomFont",monospace';g.textAlign=al||'center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=3;g.strokeStyle='#000';g.strokeText(s,x,y);g.fillText(s,x,y);}
 function draw(){g.imageSmoothingEnabled=false;
  [['#b8b8b8',0],['#a8a8a8',.36],['#989898',.64],['#888',.84]].forEach(b=>{const y=Math.round(b[1]*WY);g.fillStyle=b[0];g.fillRect(0,y,W,WY-y);});
  g.fillStyle='#d6d6d6';[[60,30,36],[210,52,48],[380,22,40],[310,90,28],[540,40,44]].forEach(c=>{const x=(c[0]+t*.08*(c[2]/36))%(W+60)-30;g.fillRect(x,c[1],c[2],8);g.fillRect(x+8,c[1]-6,c[2]-16,6);});
@@ -117,10 +126,12 @@ function draw(){g.imageSmoothingEnabled=false;
   for(let i=0;i<36;i++){vy+=GR;x+=vx;y+=vy;if(y>WY)break;if(i%3===2){const s=i<18?3:2;g.fillRect(Math.round(x-s/2),Math.round(y-s/2),s,s);}}}
  rocks.forEach(r=>{g.save();g.translate(Math.round(r.x),Math.round(r.y));g.rotate(Math.floor(r.a/6)*Math.PI/2);g.drawImage(ROCK,-9,-10,18,20);g.restore();});
  parts.forEach(p=>{g.fillStyle=p.c;g.fillRect(Math.round(p.x),Math.round(p.y),p.s,p.s);});
- txs.forEach(x=>{g.globalAlpha=Math.min(1,x.life/20);txt(x.s,x.x,x.y,x.c,x.s[0]==='H'?16:20);g.globalAlpha=1;});
- // HUD
- g.strokeStyle='#fff';g.lineWidth=2;g.strokeRect(W/2-100,12,200,10);g.fillStyle='#e33';g.fillRect(W/2-99,13,198*hp/100,8);txt('MONSTER',W/2,30,'#fff',12);
- txt('ROCKS: '+thrown,74,H-10,'#fff',12,'left');}
+ // all text is DOM so it always uses the terminal font: damage pops + HUD
+ const v=view();
+ txs.forEach(x=>{if(!x.el){const e=document.createElement('div');e.className='pop';e.style.color=x.c;e.textContent=x.s;wrap.insertBefore(e,$('title'));x.el=e;}
+  x.el.style.left=(v.ox+x.x*v.s)+'px';x.el.style.top=(v.oy+x.y*v.s)+'px';x.el.style.fontSize=((x.s[0]==='H'?16:20)*v.s)+'px';x.el.style.opacity=Math.min(1,x.life/20);});
+ if(hpShown!==hp){hpShown=hp;$('hpf').style.width=hp+'%';}
+ if(rkShown!==thrown){rkShown=thrown;$('rocks').textContent='ROCKS: '+thrown;}}
 function loop(now){const f=Math.min(3,(now-last)/16.667);last=now;update(f);draw();requestAnimationFrame(loop);}
 requestAnimationFrame(loop);
 </script>
