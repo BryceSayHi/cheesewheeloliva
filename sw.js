@@ -6,7 +6,7 @@ const FILES=[
  'image/frank_normal.avif','image/frank_talk1.avif','image/frank_talk2.avif','image/frank_taunt.avif','image/frank_sans.avif',
  'image/angry.avif','image/heart.avif','image/rock.avif','image/fight.avif','image/heal.avif',
  'image/text_box.avif','image/choice_box.avif','image/choice_box2.avif','image/slider.avif',
- 'image/x.avif','image/monster.avif','image/player.avif','image/raft.avif',
+ 'image/x.avif','image/pause.avif','image/monster.avif','image/player.avif','image/raft.avif',
  'gif/explode.gif',
  // audio
  'audio/talk.aac','audio/anza.aac',
