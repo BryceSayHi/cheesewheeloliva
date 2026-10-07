@@ -4,7 +4,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebas
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import {
   getFirestore, doc, collection, query, orderBy, limit, getDocs, getDoc,
-  writeBatch, updateDoc, increment, serverTimestamp
+  writeBatch, updateDoc, increment, serverTimestamp, startAfter, where, getCountFromServer
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -136,55 +136,107 @@ function win(total) {
 // short tag from your unique id so same-named players can be told apart
 const tagOf = uid => uid.slice(0, 4).toUpperCase();
 
-// ---- read + render ----
-async function top(boardId) {
-  const q = query(collection(db, "boards", boardId, "entries"), orderBy("score", "desc"), limit(10));
-  return (await getDocs(q)).docs.map(d => ({ uid: d.id, ...d.data() }));
+// ---- read + render (10 per page; page controls only appear once there's more than one page) ----
+const PAGE = 10;
+const $ = id => document.getElementById(id);
+let tab = "daily", reqN = 0, page = 0, curs = [null]; // curs[p] = last entry of page p-1 (where page p starts)
+
+const entriesOf = id => collection(db, "boards", id, "entries");
+
+// how many entries have a higher score than this (ties share a place)
+async function countHigher(boardId, score) {
+  const q = query(entriesOf(boardId), where("score", ">", score), limit(10000));
+  return (await getCountFromServer(q)).data().count;
 }
 
-const $ = id => document.getElementById(id);
-let tab = "daily", reqN = 0;
+function rowEl(rank, name, uid, score, me) {
+  const row = document.createElement("div");
+  row.className = "lbr" + (me ? " me" : "");
+  const rk = document.createElement("span"); rk.className = "rk"; rk.textContent = rank + ".";
+  const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = name; // textContent: names are user input
+  const tg = document.createElement("span"); tg.className = "lbtag"; tg.textContent = "#" + tagOf(uid);
+  nm.append(tg);
+  const sc = document.createElement("span"); sc.textContent = score;
+  row.append(rk, nm, sc);
+  return row;
+}
 
 function msg(text) {
   const d = document.createElement("div");
   d.className = "lbmsg";
   d.textContent = text;
-  const l = $("lbList");
-  l.replaceChildren(d);
+  $("lbRows").replaceChildren(d);
 }
 
 async function render() {
   const n = ++reqN;
   [["daily", "lbD"], ["weekly", "lbW"], ["lifetime", "lbL"]].forEach(([k, id]) =>
     $(id).classList.toggle("on", k === tab));
+  $("lbPin").style.display = "none";
   msg("loading...");
+  const boardId = boardIds()[tab];
   try {
-    const [rows, me] = await Promise.all([top(boardIds()[tab]), getUid().catch(() => null)]);
-    if (n !== reqN) return; // a newer tab click won
+    const start = curs[page] || null;
+    const q = query(entriesOf(boardId), orderBy("score", "desc"), ...(start ? [startAfter(start)] : []), limit(PAGE + 1));
+    const [snap, me] = await Promise.all([getDocs(q), getUid().catch(() => null)]);
+    if (n !== reqN) return; // a newer click won
+    const hasNext = snap.docs.length > PAGE;
+    const pageDocs = snap.docs.slice(0, PAGE);
+    if (hasNext) curs[page + 1] = pageDocs[pageDocs.length - 1];
+    const rows = pageDocs.map(d => ({ uid: d.id, ...d.data() }));
+
     const myName = window.getName && window.getName();
     $("lbYou").textContent = "you: " + (myName || "(no name yet)");
-    if (!rows.length) return msg("nobody yet. be the first.");
+
+    // page controls: only once there's more than one page
+    $("lbPager").style.display = (page > 0 || hasNext) ? "flex" : "none";
+    $("lbPg").textContent = "page " + (page + 1);
+    $("lbPrev").disabled = page === 0;
+    $("lbNext").disabled = !hasNext;
+
+    if (!rows.length) return msg(page ? "no more entries." : "nobody yet. be the first.");
+
+    // places (ties share a place)
+    const ranks = [];
+    for (let i = 0; i < rows.length; i++) {
+      if (i > 0) ranks[i] = rows[i].score === rows[i - 1].score ? ranks[i - 1] : page * PAGE + i + 1;
+      else if (page > 0 && curs[page] && curs[page].data().score === rows[0].score) {
+        try { ranks[0] = (await countHigher(boardId, rows[0].score)) + 1; }
+        catch (e) { ranks[0] = page * PAGE + 1; }
+      } else ranks[0] = page * PAGE + 1;
+    }
+    if (n !== reqN) return;
     const frag = document.createDocumentFragment();
-    rows.forEach((r, i) => {
-      const row = document.createElement("div");
-      row.className = "lbr" + (r.uid === me ? " me" : "");
-      const rk = document.createElement("span"); rk.className = "rk"; rk.textContent = i + 1 + ".";
-      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = r.name; // textContent: names are user input
-      const tg = document.createElement("span"); tg.className = "lbtag"; tg.textContent = "#" + tagOf(r.uid);
-      nm.append(tg);
-      const sc = document.createElement("span"); sc.textContent = r.score;
-      row.append(rk, nm, sc);
-      frag.append(row);
-    });
-    $("lbList").replaceChildren(frag);
+    rows.forEach((r, i) => frag.append(rowEl(ranks[i], r.name, r.uid, r.score, r.uid === me)));
+    $("lbRows").replaceChildren(frag);
+
+    // your own place, pinned under the list whenever you're not on the page being shown
+    if (me && !rows.some(r => r.uid === me)) {
+      try {
+        const mine = await getDoc(doc(db, "boards", boardId, "entries", me));
+        if (mine.exists() && n === reqN) {
+          const sc = mine.data().score;
+          const place = (await countHigher(boardId, sc)) + 1;
+          if (n === reqN) {
+            $("lbPin").replaceChildren(rowEl(place, mine.data().name, me, sc, true));
+            $("lbPin").style.display = "block";
+          }
+        }
+      } catch (e) {
+        console.warn("place lookup failed", e);
+      }
+    }
   } catch (e) {
     console.warn("leaderboard load failed", e);
     if (n === reqN) msg("couldn't load: " + (e.code || e.message || e));
   }
 }
 
-$("lbD").onclick = () => { tab = "daily"; render(); };
-$("lbW").onclick = () => { tab = "weekly"; render(); };
-$("lbL").onclick = () => { tab = "lifetime"; render(); };
+const goTab = t => { tab = t; page = 0; curs = [null]; render(); };
+$("lbD").onclick = () => goTab("daily");
+$("lbW").onclick = () => goTab("weekly");
+$("lbL").onclick = () => goTab("lifetime");
+$("lbPrev").onclick = () => { if (page > 0) { page--; render(); } };
+$("lbNext").onclick = () => { page++; render(); };
 
-window.LB = { win, claim, ensure, open: render };
+window.LB = { win, claim, ensure, open: () => { page = 0; curs = [null]; render(); } };
