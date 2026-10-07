@@ -57,7 +57,7 @@ function win(total) {
   chain = chain.then(async () => {
     try {
       const uid = await getUid();
-      const name = String((window.getName && window.getName()) || "???").trim().slice(0, 12) || "???";
+      const name = String((window.getName && window.getName()) || "???").trim().slice(0, 16) || "???";
       const ids = boardIds();
       const ref = id => doc(db, "boards", id, "entries", uid);
       const batch = writeBatch(db);
@@ -83,7 +83,7 @@ function win(total) {
 // ---- rename: updates your name on the current daily/weekly/lifetime boards ----
 // (older daily/weekly boards keep the name you had back then)
 async function rename(raw) {
-  const name = String(raw || "").trim().slice(0, 12);
+  const name = String(raw || "").trim().slice(0, 16);
   if (!name) return;
   try {
     const uid = await getUid();

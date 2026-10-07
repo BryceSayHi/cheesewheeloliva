@@ -85,7 +85,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <div id="battle"><canvas id="cv" width="360" height="215"></canvas></div>
 <div id="score"></div>
 <div id="blackout"></div>
-<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="trueBtn" style="display:none">true ending...</button><button id="mgBtn">MINIGAMES</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="mg"><h2>MINIGAMES</h2><button id="mgRiots">INITIATE THE CHICAGO RIOTS</button><button id="mgBack">BACK</button></div><div id="lb"><h2>INFINITE HYPERDEATH</h2><button id="lbPlay">PLAY</button><div id="lbTabs"><button id="lbD" class="on">DAILY</button><button id="lbW">WEEKLY</button><button id="lbL">LIFETIME</button></div><div id="lbList"></div><div id="lbYou"></div><div id="lbBtns"><button id="lbRename">RENAME</button><button id="lbBack">BACK</button></div></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div><div id="nm"><h2>LEADERBOARD</h2><p>enter your name to be added to the leaderboard</p><input id="nmIn" maxlength="12" autocomplete="off" spellcheck="false"><button id="nmOk">SUBMIT</button><button id="nmBack" style="display:none">CANCEL</button></div></div>
+<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="trueBtn" style="display:none">true ending...</button><button id="mgBtn">MINIGAMES</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="mg"><h2>MINIGAMES</h2><button id="mgRiots">INITIATE THE CHICAGO RIOTS</button><button id="mgBack">BACK</button></div><div id="lb"><h2>INFINITE HYPERDEATH</h2><button id="lbPlay">PLAY</button><div id="lbTabs"><button id="lbD" class="on">DAILY</button><button id="lbW">WEEKLY</button><button id="lbL">LIFETIME</button></div><div id="lbList"></div><div id="lbYou"></div><div id="lbBtns"><button id="lbRename">RENAME</button><button id="lbBack">BACK</button></div></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div><div id="nm"><h2>LEADERBOARD</h2><p>enter your name to be added to the leaderboard</p><input id="nmIn" maxlength="16" autocomplete="off" spellcheck="false"><button id="nmOk">SUBMIT</button><button id="nmBack" style="display:none">CANCEL</button></div></div>
 </div>
 <button id="hdX" aria-label="Exit"><img src="image/x.avif" alt="" draggable="false"></button><div id="mgWrap"><iframe id="mgFrame" title="minigame" allow="autoplay; fullscreen" allowfullscreen></iframe><button id="mgX" aria-label="Exit"><img src="image/x.avif" alt="" draggable="false"></button></div>
 <script>
@@ -210,7 +210,7 @@ function mkSlider(label,key){
 mkSlider('MUSIC','music');mkSlider('SPEAKING','speak');
 function showOpt(on){$('lb').style.display='none';$('nm').style.display='none';$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
 function showMg(on){$('lb').style.display='none';$('nm').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display='none';$('mg').style.display=on?'flex':'none';}
-function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.23';$('mgWrap').style.display='block';setMusic(null);}
+function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.23.1';$('mgWrap').style.display='block';setMusic(null);}
 function closeRiots(){$('mgFrame').onload=null;$('mgWrap').style.display='none';$('mgFrame').src='about:blank';setMusic('menu');}
 $('mgBtn').onclick=()=>showMg(true);$('mgBack').onclick=()=>showMg(false);$('mgRiots').onclick=openRiots;$('mgX').onclick=closeRiots;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mgWrap').style.display==='block')closeRiots();});
@@ -229,7 +229,7 @@ function setName(v){try{document.cookie=NAME_KEY+'='+encodeURIComponent(v)+'; ma
 let nmCb=null;
 function showNm(on){$('lb').style.display='none';$('mg').style.display='none';$('warn').style.display='none';$('opt').style.display='none';$('mm').style.display=on?'none':'flex';$('nm').style.display=on?'flex':'none';}
 function askName(cb){if(getName()){cb();return;}nmCb=cb;$('nmBack').style.display='none';$('nmIn').value='';showNm(true);setTimeout(()=>$('nmIn').focus(),50);}
-function nmSubmit(){const v=$('nmIn').value.trim().slice(0,12);if(!v)return;setName(v);const f=nmCb;nmCb=null;if(f)f();}
+function nmSubmit(){const v=$('nmIn').value.trim().slice(0,16);if(!v)return;setName(v);const f=nmCb;nmCb=null;if(f)f();}
 $('nmOk').onclick=nmSubmit;$('nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')nmSubmit();});
 function goHD(){askName(()=>{closeMain();startEndless();});}
 
@@ -405,6 +405,6 @@ if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator
 openMain();
 </script>
 <script type="module" src="leaderboard.js"></script>
-<div id="ver">v0.23</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.23.1</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
