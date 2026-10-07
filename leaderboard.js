@@ -1,9 +1,9 @@
 // Infinite Hyperdeath leaderboard (Firebase Auth anonymous + Firestore)
-// 1 point per Frank kill, tracked on three boards: daily, weekly, lifetime (all UTC).
+// 1 point per Frank kill. Daily/weekly count kills in that period (UTC); lifetime is your saved HIGH SCORE.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 import {
-  getFirestore, doc, collection, query, orderBy, limit, getDocs,
+  getFirestore, doc, collection, query, orderBy, limit, getDocs, getDoc,
   writeBatch, updateDoc, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
@@ -50,22 +50,27 @@ const boardIds = () => ({
   lifetime: "lifetime"
 });
 
-// ---- submit: +1 on all three boards, one write at a time ----
+// ---- submit: daily/weekly +1 per kill, lifetime follows your saved score; one write at a time ----
 let chain = Promise.resolve();
 let lastErr = ""; // shown on the leaderboard screen so failures aren't silent
-function win() {
+function win(total) {
   chain = chain.then(async () => {
     try {
       const uid = await getUid();
       const name = String((window.getName && window.getName()) || "???").trim().slice(0, 12) || "???";
+      const ids = boardIds();
+      const ref = id => doc(db, "boards", id, "entries", uid);
       const batch = writeBatch(db);
-      for (const id of Object.values(boardIds())) {
-        batch.set(
-          doc(db, "boards", id, "entries", uid),
-          { name, score: increment(1), updatedAt: serverTimestamp() },
-          { merge: true }
-        );
+      // daily + weekly: +1 per kill
+      for (const id of [ids.daily, ids.weekly]) {
+        batch.set(ref(id), { name, score: increment(1), updatedAt: serverTimestamp() }, { merge: true });
       }
+      // lifetime: follows the game's own saved HIGH SCORE (so kills from before the leaderboard count),
+      // but always goes up by at least 1
+      const cur = await getDoc(ref(ids.lifetime));
+      const have = cur.exists() ? (cur.data().score | 0) : 0;
+      const life = Math.min(10000, Math.max(have + 1, total | 0));
+      if (life > have) batch.set(ref(ids.lifetime), { name, score: life, updatedAt: serverTimestamp() }, { merge: true });
       await batch.commit();
       lastErr = "";
     } catch (e) {
