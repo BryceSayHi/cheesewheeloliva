@@ -1,6 +1,6 @@
-const V='frank-v7';
+const V='frank-v8';
 const FILES=[
- './','index.html','riots.html','favicon.ico',
+ './','index.html','leaderboard.js','riots.html','favicon.ico',
  'font/terminal-font.ttf','lang/dialogue.txt',
  // images
  'image/frank_normal.avif','image/frank_talk1.avif','image/frank_talk2.avif','image/frank_taunt.avif','image/frank_sans.avif',
@@ -19,6 +19,7 @@ self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.a
 function store(r,res){if(res&&res.status===200&&new URL(r.url).origin===location.origin){const c=res.clone();caches.open(V).then(ch=>ch.put(r,c)).catch(()=>{});}return res;}
 self.addEventListener('fetch',e=>{
  const r=e.request;if(r.method!=='GET')return;
+ if(new URL(r.url).origin!==location.origin)return; // let Firebase/CDN requests go straight to the network
  if(new URL(r.url).pathname.indexOf('/lang/')>=0){e.respondWith(fetch(r).then(res=>store(r,res)).catch(()=>caches.match(r,{ignoreSearch:true})));return;}
  if(r.mode==='navigate'){e.respondWith(fetch(r).then(res=>store(r,res)).catch(()=>caches.match(r,{ignoreSearch:true}).then(h=>h||caches.match('./'))));return;}
  e.respondWith(caches.match(r,{ignoreSearch:true}).then(async hit=>{

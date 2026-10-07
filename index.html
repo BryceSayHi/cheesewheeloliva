@@ -72,6 +72,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 #ver{position:fixed;z-index:9;left:calc(6px + env(safe-area-inset-left,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));font-size:.75rem;color:#fff;opacity:.5;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
 #credits{padding:10px;margin:-10px;cursor:default;position:fixed;z-index:9;right:calc(6px + env(safe-area-inset-right,0px));bottom:calc(4px + env(safe-area-inset-bottom,0px));font-size:.75rem;color:#fff;opacity:.5;pointer-events:none;font-family:"CustomFont","Courier New",monospace}
 #nm{display:none;flex-direction:column;align-items:center;max-width:100%}#nm h2{margin:0 0 min(3vh,20px);font:inherit;font-size:clamp(1.6rem,7vw,2.2rem);font-weight:normal}#nm p{margin:0 0 20px;box-sizing:border-box;max-width:min(520px,100%);text-align:center;font-size:1.15rem;line-height:1.4;padding:10px 14px;border:18px solid transparent;border-image:url(image/text_box.avif) 6 stretch;background:var(--bg)}#nm input{font:inherit;font-size:1.3rem;text-align:center;width:min(300px,80%);margin-bottom:14px;padding:4px 10px;border:12px solid transparent;border-image:url(image/choice_box.avif) 6 stretch;image-rendering:pixelated;background:var(--bg);color:var(--fg);outline:none;box-sizing:border-box}
+#lb{display:none;flex-direction:column;align-items:center;width:min(480px,100%)}#lb h2{margin:0 0 min(3vh,20px);font:inherit;font-size:clamp(1.6rem,7vw,2.2rem);font-weight:normal}#lbTabs{display:flex;justify-content:center;flex-wrap:wrap}#menu #lbTabs button{font-size:.95rem;padding:0 8px;margin:0 3px 10px;border-width:8px}#menu #lbTabs button.on{background:#333}#lbList{width:100%;box-sizing:border-box;min-height:80px;max-height:44vh;overflow:auto;margin-bottom:14px;padding:6px 10px;border:18px solid transparent;border-image:url(image/text_box.avif) 6 stretch;background:var(--bg);font-size:1.05rem}.lbr{display:flex;gap:10px;padding:2px 0}.lbr .rk{width:2.2em;opacity:.6}.lbr .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lbr.me{color:var(--accent)}.lbmsg{text-align:center;opacity:.7;padding:8px 0}#lb button{max-width:100%}.lbtag{opacity:.45;font-size:.8em;margin-left:4px}#lbYou{width:100%;text-align:center;margin-bottom:10px;font-size:.95rem;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -84,7 +85,7 @@ html,body{height:100%;margin:0;background:var(--bg);font-family:"CustomFont","Tr
 <div id="battle"><canvas id="cv" width="360" height="215"></canvas></div>
 <div id="score"></div>
 <div id="blackout"></div>
-<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="trueBtn" style="display:none">true ending...</button><button id="mgBtn">MINIGAMES</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="mg"><h2>MINIGAMES</h2><button id="mgRiots">INITIATE THE CHICAGO RIOTS</button><button id="mgBack">BACK</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div><div id="nm"><h2>LEADERBOARD</h2><p>enter your name to be added to the leaderboard</p><input id="nmIn" maxlength="12" autocomplete="off" spellcheck="false"><button id="nmOk">SUBMIT</button></div></div>
+<div id="menu"><div id="mm"><h1>Olivarune</h1><button id="playBtn">PLAY</button><button id="hdBtn">INFINITE HYPERDEATH</button><button id="trueBtn" style="display:none">true ending...</button><button id="lbBtn">LEADERBOARD</button><button id="mgBtn">MINIGAMES</button><button id="optBtn">OPTIONS</button><div id="load"></div></div><div id="opt"><h2>OPTIONS</h2><div id="sliders"></div><button id="optBack">BACK</button></div><div id="mg"><h2>MINIGAMES</h2><button id="mgRiots">INITIATE THE CHICAGO RIOTS</button><button id="mgBack">BACK</button></div><div id="lb"><h2>LEADERBOARD</h2><div id="lbTabs"><button id="lbD" class="on">DAILY</button><button id="lbW">WEEKLY</button><button id="lbL">LIFETIME</button></div><div id="lbList"></div><div id="lbYou"></div><button id="lbRename">RENAME</button><button id="lbBack">BACK</button></div><div id="warn"><p>hey! you might wanna play the story before playing INFINITE HYPERDEATH</p><button id="warnOk">okay</button><button id="warnNo" class="evil">no I'm a yucky hobo and hate fun</button></div><div id="nm"><h2>LEADERBOARD</h2><p>enter your name to be added to the leaderboard</p><input id="nmIn" maxlength="12" autocomplete="off" spellcheck="false"><button id="nmOk">SUBMIT</button><button id="nmBack" style="display:none">CANCEL</button></div></div>
 </div>
 <div id="mgWrap"><iframe id="mgFrame" title="minigame" allow="autoplay; fullscreen" allowfullscreen></iframe><button id="mgX" aria-label="Exit"><img src="image/x.avif" alt="" draggable="false"></button></div>
 <script>
@@ -186,7 +187,7 @@ const HDP_KEY='frank_hd_played';
 function hasPlayedHD(){let c=false,l=false;try{c=new RegExp('(?:^|; )'+HDP_KEY+'=1').test(document.cookie);}catch(e){}try{l=localStorage.getItem(HDP_KEY)==='1';}catch(e){}return c||l;}
 function markPlayedHD(){try{document.cookie=HDP_KEY+'=1; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(HDP_KEY,'1');}catch(e){}}
 function refreshTrue(){const b=$('trueBtn');if(b)b.style.display=(hasBeaten()&&hasPlayedHD()&&getName())?'':'none';}
-function showWarn(on){$('nm').style.display='none';$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';$('opt').style.display='none';}
+function showWarn(on){$('lb').style.display='none';$('nm').style.display='none';$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display=on?'flex':'none';$('opt').style.display='none';}
 function openMain(){dev=false;refreshTrue();document.body.classList.add('mm');calm();showWarn(false);$('menu').style.display='flex';setMusic('menu');}
 function closeMain(){dev=false;document.body.classList.remove('mm');calm();showWarn(false);$('menu').style.display='none';setMusic(null);}
 function toMenu(){clr();$('dlg').style.display='none';$('choices').innerHTML='';$('bm').innerHTML='';$('stage').classList.remove('endless');$('score').style.display='none';$('blackout').classList.remove('on');const s=$('sprite');s.classList.remove('spin','big','bt','shake');s.style.display='';endless=false;openMain();}
@@ -207,15 +208,15 @@ function mkSlider(label,key){
  paint();$('sliders').appendChild(row);
 }
 mkSlider('MUSIC','music');mkSlider('SPEAKING','speak');
-function showOpt(on){$('nm').style.display='none';$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
-function showMg(on){$('nm').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display='none';$('mg').style.display=on?'flex':'none';}
-function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.21';$('mgWrap').style.display='block';setMusic(null);}
+function showOpt(on){$('lb').style.display='none';$('nm').style.display='none';$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
+function showMg(on){$('lb').style.display='none';$('nm').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display='none';$('mg').style.display=on?'flex':'none';}
+function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.22';$('mgWrap').style.display='block';setMusic(null);}
 function closeRiots(){$('mgFrame').onload=null;$('mgWrap').style.display='none';$('mgFrame').src='about:blank';setMusic('menu');}
 $('mgBtn').onclick=()=>showMg(true);$('mgBack').onclick=()=>showMg(false);$('mgRiots').onclick=openRiots;$('mgX').onclick=closeRiots;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mgWrap').style.display==='block')closeRiots();});
 addEventListener('message',e=>{if(e.data==='mg-exit'&&e.source===$('mgFrame').contentWindow)closeRiots();});
 $('optBtn').onclick=()=>showOpt(true);
-$('optBack').onclick=()=>showOpt(false);
+$('optBack').onclick=()=>showOpt(false);function showLb(on){$('nm').style.display='none';$('mg').style.display='none';$('warn').style.display='none';$('opt').style.display='none';$('mm').style.display=on?'none':'flex';$('lb').style.display=on?'flex':'none';if(on){if(window.LB)LB.open();else $('lbList').textContent="leaderboard.js didn't load (press F12 and check the console)";}}$('lbBtn').onclick=()=>showLb(true);$('lbRename').onclick=()=>{nmCb=()=>{showLb(true);if(window.LB)LB.rename(getName());};$('nmBack').style.display='block';$('nmIn').value=getName();showNm(true);setTimeout(()=>$('nmIn').focus(),50);};$('nmBack').onclick=()=>{nmCb=null;showLb(true);};$('lbBack').onclick=()=>showLb(false);
 $('playBtn').onclick=()=>{closeMain();start();};
 $('hdBtn').onclick=()=>{if(hasBeaten())goHD();else showWarn(true);};
 $('warnOk').onclick=()=>{closeMain();start();};
@@ -226,8 +227,8 @@ const NAME_KEY='frank_name';
 function getName(){let c='',l='';try{const m=document.cookie.match(new RegExp('(?:^|; )'+NAME_KEY+'=([^;]*)'));if(m)c=decodeURIComponent(m[1]);}catch(e){}try{l=localStorage.getItem(NAME_KEY)||'';}catch(e){}return l||c;}
 function setName(v){try{document.cookie=NAME_KEY+'='+encodeURIComponent(v)+'; max-age=31536000; path=/; SameSite=Lax';}catch(e){}try{localStorage.setItem(NAME_KEY,v);}catch(e){}}
 let nmCb=null;
-function showNm(on){$('mg').style.display='none';$('warn').style.display='none';$('opt').style.display='none';$('mm').style.display=on?'none':'flex';$('nm').style.display=on?'flex':'none';}
-function askName(cb){if(getName()){cb();return;}nmCb=cb;$('nmIn').value='';showNm(true);setTimeout(()=>$('nmIn').focus(),50);}
+function showNm(on){$('lb').style.display='none';$('mg').style.display='none';$('warn').style.display='none';$('opt').style.display='none';$('mm').style.display=on?'none':'flex';$('nm').style.display=on?'flex':'none';}
+function askName(cb){if(getName()){cb();return;}nmCb=cb;$('nmBack').style.display='none';$('nmIn').value='';showNm(true);setTimeout(()=>$('nmIn').focus(),50);}
 function nmSubmit(){const v=$('nmIn').value.trim().slice(0,12);if(!v)return;setName(v);const f=nmCb;nmCb=null;if(f)f();}
 $('nmOk').onclick=nmSubmit;$('nmIn').addEventListener('keydown',e=>{if(e.key==='Enter')nmSubmit();});
 function goHD(){askName(()=>{closeMain();startEndless();});}
@@ -263,7 +264,7 @@ function goHeal(){if(st!=='menu')return;itemsUI('');}
 function eat(){if(st!=='items'||gab<=0||php>=PMAX)return;gab--;const o=php;php=Math.min(PMAX,php+30);itemsUI('+'+(php-o)+' HP!');}
 function nextRound(){const pool=endless?TAUNTS.concat(HD_TAUNTS):TAUNTS;let t;do{t=pool[Math.floor(R()*pool.length)];}while(t===curT&&pool.length>1);curT=t;st='talk';tm=0;bl=[];sp=0;hx=AX+AW/2;hy=AY+AH/2;}
 function endBattle(){run=false;$('bubble').style.display='none';$('battle').style.display='none';$('sprite').classList.remove('bt');setSprite(dev?'d_taunt':'normal');}
-function win(){endBattle();if(dev)return devEnd();if(endless){score++;hdLvl++;saveScore();death();}else{markBeaten();setMusic(null);say('Frank','There really were two hits. You hitting me, and me hitting the floor',death,40);}}
+function win(){endBattle();if(dev)return devEnd();if(endless){score++;hdLvl++;saveScore();if(window.LB)LB.win();death();}else{markBeaten();setMusic(null);say('Frank','There really were two hits. You hitting me, and me hitting the floor',death,40);}}
 function death(){$('dlg').style.display='none';const s=$('sprite');setSprite('taunt');s.classList.add('spin');let bi;
  setTimeout(()=>{s.classList.remove('spin');s.classList.add('big');let n=0;s.src=BOOM+'?'+Date.now();bi=null;},1600);
  setTimeout(()=>{if(bi)clearInterval(bi);s.style.display='none';if(endless){blackout();return;}say('','KABOOM! Frank explodes into confetti.\nThe clouds part. Sunshine. You win, Al!',frankReturns,60);},2400);}
@@ -403,6 +404,7 @@ addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;if
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
-<div id="ver">v0.21</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<script type="module" src="leaderboard.js"></script>
+<div id="ver">v0.22</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
