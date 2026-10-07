@@ -132,7 +132,7 @@ async function render() {
     const [rows, me] = await Promise.all([top(boardIds()[tab]), getUid().catch(() => null)]);
     if (n !== reqN) return; // a newer tab click won
     const myName = window.getName && window.getName();
-    $("lbYou").textContent = "you: " + (myName || "(no name yet)") + (me ? " #" + tagOf(me) : "") + (lastErr ? "  |  last save failed: " + lastErr : "") + (renameErr ? "  |  rename failed: " + renameErr : "");
+    $("lbYou").textContent = "you: " + (myName || "(no name yet)") + (me ? " #" + tagOf(me) : "") + (lastErr ? "  |  last save failed: " + lastErr : "") + (renameErr ? "  |  rename failed: " + renameErr : "") + "  |  lb.js name16";
     if (!rows.length) return msg("nobody yet. be the first.");
     const frag = document.createDocumentFragment();
     rows.forEach((r, i) => {

@@ -210,7 +210,7 @@ function mkSlider(label,key){
 mkSlider('MUSIC','music');mkSlider('SPEAKING','speak');
 function showOpt(on){$('lb').style.display='none';$('nm').style.display='none';$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
 function showMg(on){$('lb').style.display='none';$('nm').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display='none';$('mg').style.display=on?'flex':'none';}
-function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.23.1';$('mgWrap').style.display='block';setMusic(null);}
+function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.23.2';$('mgWrap').style.display='block';setMusic(null);}
 function closeRiots(){$('mgFrame').onload=null;$('mgWrap').style.display='none';$('mgFrame').src='about:blank';setMusic('menu');}
 $('mgBtn').onclick=()=>showMg(true);$('mgBack').onclick=()=>showMg(false);$('mgRiots').onclick=openRiots;$('mgX').onclick=closeRiots;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mgWrap').style.display==='block')closeRiots();});
@@ -405,6 +405,6 @@ if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator
 openMain();
 </script>
 <script type="module" src="leaderboard.js"></script>
-<div id="ver">v0.23.1</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.23.2</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
