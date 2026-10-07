@@ -1,4 +1,4 @@
-const V='frank-v11';
+const V='frank-v12';
 const FILES=[
  './','index.html','leaderboard.js','riots.html','favicon.ico',
  'font/terminal-font.ttf','lang/dialogue.txt',
