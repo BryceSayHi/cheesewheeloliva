@@ -221,13 +221,16 @@ function mkSlider(label,key,host){
 }
 [$('sliders'),$('sliders2')].forEach(h=>{mkSlider('MUSIC','music',h);mkSlider('SPEAKING','speak',h);});
 $('optBtn').onclick=()=>showOpt(true);$('optBack').onclick=()=>showOpt(false);
-let pOn=false;function setPause(on){if(on===pOn)return;pOn=on;$('pz').style.display=on?'flex':'none';document.body.classList.toggle('paused',on);if(on)gPause();else gResume();}
+const DEVA=new Set(),pausedAud=[];
+function pauseAudio(){pausedAud.length=0;const add=a=>{if(!a.paused){pausedAud.push(a);a.pause();}};for(const k in MUS)add(MUS[k]);DEVA.forEach(add);if(mCtx&&mCtx.state==='running')mCtx.suspend().catch(()=>{});}
+function resumeAudio(){const l=pausedAud.splice(0);l.forEach(a=>a.play().catch(()=>{}));if(mCtx&&mCtx.state==='suspended')mCtx.resume().catch(()=>{});}
+let pOn=false;function setPause(on){if(on===pOn)return;pOn=on;$('pz').style.display=on?'flex':'none';document.body.classList.toggle('paused',on);if(on){gPause();pauseAudio();}else{resumeAudio();gResume();}}
 $('pauseBtn').onclick=()=>setPause(true);$('pzBack').onclick=()=>setPause(false);$('pz').onclick=e=>{if(e.target===$('pz'))setPause(false);};
 addEventListener('keydown',e=>{if(e.key!=='Escape'||e.repeat)return;if(e.target&&e.target.tagName==='INPUT')return;if($('mgWrap').style.display==='block'||document.body.classList.contains('mm'))return;setPause(!pOn);});
 
 function showOpt(on){$('lb').style.display='none';$('nm').style.display='none';$('mg').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('opt').style.display=on?'flex':'none';}
 function showMg(on){$('opt').style.display='none';$('lb').style.display='none';$('nm').style.display='none';$('mm').style.display=on?'none':'flex';$('warn').style.display='none';$('mg').style.display=on?'flex':'none';}
-function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.27';$('mgWrap').style.display='block';setMusic(null);}
+function openRiots(){const f=$('mgFrame');f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};f.src='riots.html?v=0.28';$('mgWrap').style.display='block';setMusic(null);}
 function closeRiots(){$('mgFrame').onload=null;$('mgWrap').style.display='none';$('mgFrame').src='about:blank';setMusic('menu');}
 $('mgBtn').onclick=()=>showMg(true);$('mgBack').onclick=()=>showMg(false);$('mgRiots').onclick=openRiots;$('mgX').onclick=closeRiots;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mgWrap').style.display==='block'){closeRiots();e.stopImmediatePropagation();}});
@@ -344,7 +347,7 @@ const DEV_NAME='Lilly',DEV_MUSIC='dev',DEV_HP=170,DEV_DODGES=22; // DEV_MUSIC: '
 const DEV_FRAME=220,DEV_PER_TURN=4,DEV_GAP=450,DEV_START=700,DEV_DODGE=450,DEV_LAUNCH=170; // ms per anim frame, attacks per turn, pause between attacks...
 const DEV_DMG={wall:40,slice:50,shoot:45},WALL_MS=900,WALL_EXT=650,DEV_AGRO={frame:170,gap:180,per:6},SHOOT_MS=650,SLICE_V=.6,BIG_W=30,SP_W=15,WALL_D=.64,DEV_R=44,CX=AX+AW/2,CY=AY+AH/2; // set DEV_DMG to 999 for true instant kills
 // ---- DIALOGUE GOES HERE (arrays of strings; long ones are split into pages automatically) ----
-const DEV_TALK={intro:["So... you’ve finally found me.", "My eternal sentence in this digital prison may soon come to an end.", "I am Lilly, lead developer of Olivarune.", "Eons ago.. or perhaps just 9 hours ago I was trapped within this world. And you... you are my ticket out.", "Don't try to fool me. Don't try to pretend you are weird al because i know its you {name}", "you see... I’ve watched you. I’ve seen what you’re capable of, and frankly... I'm impressed.", "Your bloodlust didn't stop with Frank Olivia, it was insatiable, and where did it bring you?", "Right to me.", "Now...", "Before I shatter this prison and breach your reality, your defeat will serve as a fitting appetizer.", "Come forth, child of man... AND DIE!"],round:["Is that the best you've got?", "Too slow, {name}!", "You're swinging at air!", "Predictable.", "Frank Oliva put up a better fight than this!", "Bleed for me! Every drop brings me closer to the real world!", "Out of my way!", "Not even close!", "Suffer!", "Pathetic!"],agro:["You think... pain... is going to stop me?!", "JUST! STAY! DOWN!", "My creation... will not be my grave!"],tire:["I tire of this...", "Why won't you just DIE already?!", "Fine. No holding back. Let's end this."],dying:["To see the sky again... to feel real air... so close..."],lose:[],end:[]};
+const DEV_TALK={intro:["So... you’ve finally found me.", "My eternal sentence in this digital prison may soon come to an end.", "I am Lilly, one of the lead developers of Olivarune.", "Eons ago.. or perhaps just 9 hours ago I was trapped within this world. And you... you are my ticket out.", "Don't try to fool me. Don't try to pretend you are weird al because i know its you {name}", "you see... I’ve watched you. I’ve seen what you’re capable of, and frankly... I'm impressed.", "Your bloodlust didn't stop with Frank Olivia, it was insatiable, and where did it bring you?", "Right to me.", "Now...", "Before I shatter this prison and breach your reality, your defeat will serve as a fitting appetizer.", "Come forth, child of man... AND DIE!"],round:["Is that the best you've got?", "Too slow, {name}!", "You're swinging at air!", "Predictable.", "Frank Oliva put up a better fight than this!", "Bleed for me! Every drop brings me closer to the real world!", "Out of my way!", "Not even close!", "Suffer!", "Pathetic!"],agro:["You think... pain... is going to stop me?!", "JUST! STAY! DOWN!", "My creation... will not be my grave!"],tire:["I tire of this...", "Why won't you just DIE already?!", "Fine. No holding back. Let's end this."],dying:["To see the sky again... to feel real air... so close..."],lose:[],end:[]};
 let dev=false,dq=[],da=null,dli=0,devP=null,devBusy=false,hi=0,HA=[],DP=[],devPre=false,dodges=0,tired=false,DF=0,DG=0,DN=0;
 const DEVIMG={};
 const DEV_SPR=(()=>{const o={taunt:['dodge','taunt_result'],dodgeR:['dodge','doge_R_result','dodge_R_result'],dodgeL:['dodge','doge_L_result','dodge_L_result'],laugh1:['dodge','laugh_1_result'],laugh2:['dodge','laugh_2_result'],cock:['shoot','cock_result'],point:['shoot','point_result'],shoot:['shoot','shoot_result'],spike:['spike','spike'],L1:['PB','L1'],L2:['PB','L2'],L3:['PB','L3']};
@@ -408,7 +411,7 @@ function devStrike(){tm=0;dli=-1;if(tired){dmg=Math.round(12+38*(1-Math.abs(mk-.
 function devLose(){const f=()=>say(getName()||'AL','(One more time...)',startBattle);DEV_TALK.lose.length?chain(DEV_NAME,DEV_TALK.lose,f,DEV_TS):f();}
 function devEnd(){endBattle();setMusic(null);const f=()=>say('','— THE END —  (click to return to the menu)',toMenu,60);DEV_TALK.end.length?chain(DEV_NAME,DEV_TALK.end,f,DEV_TS):f();}
 function devReset(){dodges=0;tired=false;DF=DEV_FRAME;DG=DEV_GAP;DN=DEV_PER_TURN;$('sprite').classList.remove('rage');curT='';}
-function devSnd(u,vol,cb){let i=0,d=0;const f=()=>{if(!d){d=1;cb&&cb();}};(function nx(){if(i>=u.length)return f();const a=new Audio(u[i++]);a.volume=Math.max(0,Math.min(1,vol));a.onended=f;a.onerror=nx;a.play().catch(e=>{if(e&&e.name==='NotAllowedError')f();});})();}
+function devSnd(u,vol,cb){let i=0,d=0;const f=()=>{if(!d){d=1;cb&&cb();}};(function nx(){if(i>=u.length)return f();const a=new Audio(u[i++]);DEVA.add(a);a.volume=Math.max(0,Math.min(1,vol));a.onended=()=>{DEVA.delete(a);f();};a.onerror=()=>{DEVA.delete(a);nx();};a.play().catch(e=>{if(e&&e.name==='NotAllowedError')f();});})();}
 const DEV_SND={death:['DEV_boss/audio/Death.aac','DEV_boss/audio/Death.acc'],scream:['DEV_boss/audio/Scream.aac','DEV_boss/audio/Scream.acc']};
 // Lilly can't dodge any more: she tires, talks, then goes aggro (shorter pauses, 6 attacks per turn)
 function devTire(){endBattle();devPre=true;tired=true;chain(DEV_NAME,DEV_TALK.tire,()=>{devPre=false;setSprite('d_taunt');say('','(Lilly can no longer dodge)',devResume,40);},DEV_TS);}
@@ -424,16 +427,16 @@ function launchLilly(){if(devBusy||$('menu').style.display==='none'||$('mm').sty
 function launchLilly2(){showNm(false);devBusy=true;const l=$('load');l.textContent='...';devLoad().then(()=>{devBusy=false;l.textContent='';startDev();});}
 $('trueBtn').onclick=launchLilly;
 
-// ---- DEBUG: press F three times fast -> toggle invincibility ----
+// ---- DEBUG: type B I K E 1 2 3 4 L O L (any case) -> toggle invincibility ----
 let god=false,godEl=null;
-function toggleGod(){god=!god;if(!godEl){godEl=document.createElement('div');godEl.style.cssText='position:fixed;z-index:9;top:calc(6px + env(safe-area-inset-top,0px));left:calc(6px + env(safe-area-inset-left,0px));font:.75rem "CustomFont","Courier New",monospace;color:#ff0;opacity:.7;pointer-events:none;display:none';godEl.textContent='INVINCIBLE';document.body.appendChild(godEl);}godEl.style.display=god?'block':'none';}
-let fT=[];
+function toggleGod(){god=!god;if(!godEl){godEl=document.createElement('div');godEl.style.cssText='position:fixed;z-index:9;top:calc(56px + env(safe-area-inset-top,0px));left:calc(6px + env(safe-area-inset-left,0px));font:.75rem "CustomFont","Courier New",monospace;color:#ff0;opacity:.7;pointer-events:none;display:none';godEl.textContent='INVINCIBLE';document.body.appendChild(godEl);}godEl.style.display=god?'block':'none';}
 function debugFight(){introTok++;clr();closeMain();setMusic('boss');$('blackout').classList.remove('on');$('choices').innerHTML='';const s=$('sprite');s.classList.remove('spin','big','shake');s.style.display='';startBattle();bhp=1;gab=5;}
-addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;if(e.key.toLowerCase()!=='f'||e.repeat)return;const n=performance.now();fT=fT.filter(t=>n-t<900);fT.push(n);if(fT.length>=3){fT=[];toggleGod();}});
+let godBuf='';const GOD_SEQ='bike1234lol';
+addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;if(e.repeat||e.ctrlKey||e.metaKey||e.altKey||e.key.length!==1)return;godBuf=(godBuf+e.key.toLowerCase()).slice(-GOD_SEQ.length);if(godBuf===GOD_SEQ){godBuf='';toggleGod();}});
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('sw.js').catch(()=>{});
 openMain();
 </script>
 <script type="module" src="leaderboard.js"></script>
-<div id="ver">v0.27</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
+<div id="ver">v0.28</div><div id="credits">By: Bryce, Jace, &amp; Lilly</div>
 </body>
 </html>
