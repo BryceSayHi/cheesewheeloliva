@@ -1,4 +1,4 @@
-const V='frank-v8';
+const V='frank-v10';
 const FILES=[
  './','index.html','leaderboard.js','riots.html','favicon.ico',
  'font/terminal-font.ttf','lang/dialogue.txt',
@@ -20,7 +20,7 @@ function store(r,res){if(res&&res.status===200&&new URL(r.url).origin===location
 self.addEventListener('fetch',e=>{
  const r=e.request;if(r.method!=='GET')return;
  if(new URL(r.url).origin!==location.origin)return; // let Firebase/CDN requests go straight to the network
- if(new URL(r.url).pathname.indexOf('/lang/')>=0){e.respondWith(fetch(r).then(res=>store(r,res)).catch(()=>caches.match(r,{ignoreSearch:true})));return;}
+ const pn=new URL(r.url).pathname;if(pn.indexOf('/lang/')>=0||pn.slice(-14)==='leaderboard.js'){e.respondWith(fetch(r).then(res=>store(r,res)).catch(()=>caches.match(r,{ignoreSearch:true})));return;}
  if(r.mode==='navigate'){e.respondWith(fetch(r).then(res=>store(r,res)).catch(()=>caches.match(r,{ignoreSearch:true}).then(h=>h||caches.match('./'))));return;}
  e.respondWith(caches.match(r,{ignoreSearch:true}).then(async hit=>{
   if(!hit)return fetch(r).then(res=>store(r,res));

@@ -52,7 +52,7 @@ const boardIds = () => ({
 
 // ---- submit: daily/weekly +1 per kill, lifetime follows your saved score; one write at a time ----
 let chain = Promise.resolve();
-let lastErr = ""; // shown on the leaderboard screen so failures aren't silent
+let lastErr = "", renameErr = ""; // shown on the leaderboard screen so failures aren't silent
 function win(total) {
   chain = chain.then(async () => {
     try {
@@ -87,9 +87,17 @@ async function rename(raw) {
   if (!name) return;
   try {
     const uid = await getUid();
-    await Promise.allSettled(Object.values(boardIds()).map(id =>
-      updateDoc(doc(db, "boards", id, "entries", uid), { name }))); // boards you aren't on yet just fail quietly
+    const errs = [];
+    await Promise.all(Object.values(boardIds()).map(async id => {
+      const ref = doc(db, "boards", id, "entries", uid);
+      try {
+        if ((await getDoc(ref)).exists()) await updateDoc(ref, { name }); // skip boards you aren't on yet
+      } catch (e) { errs.push(e.code || e.message || String(e)); }
+    }));
+    if (errs.length) { lastErr = "rename: " + errs[0]; console.warn("leaderboard rename failed", errs); }
+    else lastErr = "";
   } catch (e) {
+    lastErr = "rename: " + (e.code || e.message || String(e));
     console.warn("leaderboard rename failed", e);
   }
   if ($("lb").style.display !== "none") render();
@@ -124,7 +132,7 @@ async function render() {
     const [rows, me] = await Promise.all([top(boardIds()[tab]), getUid().catch(() => null)]);
     if (n !== reqN) return; // a newer tab click won
     const myName = window.getName && window.getName();
-    $("lbYou").textContent = "you: " + (myName || "(no name yet)") + (me ? " #" + tagOf(me) : "") + (lastErr ? "  |  last save failed: " + lastErr : "");
+    $("lbYou").textContent = "you: " + (myName || "(no name yet)") + (me ? " #" + tagOf(me) : "") + (lastErr ? "  |  last save failed: " + lastErr : "") + (renameErr ? "  |  rename failed: " + renameErr : "");
     if (!rows.length) return msg("nobody yet. be the first.");
     const frag = document.createDocumentFragment();
     rows.forEach((r, i) => {
