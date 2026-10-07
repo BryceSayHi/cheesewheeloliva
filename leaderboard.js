@@ -50,14 +50,67 @@ const boardIds = () => ({
   lifetime: "lifetime"
 });
 
+// ---- unique names: names/{lowercase name} -> your uid, players/{uid} -> your current name ----
+const NAME_RE = /^[A-Za-z0-9]([A-Za-z0-9 _.-]*[A-Za-z0-9])?$/;
+const cleanName = raw => String(raw || "").trim().replace(/\s+/g, " ");
+const nameOk = n => n.length >= 1 && n.length <= 16 && NAME_RE.test(n);
+let regName = null; // the name already confirmed as registered to you this session
+
+// Try to register `raw` as your name. -> { ok:true, name } | { ok:false, err:"taken"|"invalid"|"net" }
+async function claim(raw) {
+  const name = cleanName(raw);
+  if (!nameOk(name)) return { ok: false, err: "invalid" };
+  const key = name.toLowerCase();
+  let uid, p, n;
+  try {
+    uid = await getUid();
+    [p, n] = await Promise.all([getDoc(doc(db, "players", uid)), getDoc(doc(db, "names", key))]);
+  } catch (e) {
+    console.warn("name check failed", e);
+    return { ok: false, err: "net", code: e.code };
+  }
+  if (n.exists() && n.data().uid !== uid) return { ok: false, err: "taken" };
+  if (p.exists() && p.data().name === name) { regName = name; return { ok: true, name }; }
+  const oldKey = p.exists() ? p.data().key : null;
+  try {
+    const batch = writeBatch(db);
+    if (!n.exists()) batch.set(doc(db, "names", key), { uid, name, updatedAt: serverTimestamp() });
+    if (oldKey && oldKey !== key) batch.delete(doc(db, "names", oldKey)); // frees your old name
+    batch.set(doc(db, "players", uid), { name, key, updatedAt: serverTimestamp() });
+    for (const id of Object.values(boardIds())) { // carry the new name onto boards you're already on
+      const ref = doc(db, "boards", id, "entries", uid);
+      if ((await getDoc(ref)).exists()) batch.update(ref, { name });
+    }
+    await batch.commit();
+    regName = name;
+    return { ok: true, name };
+  } catch (e) {
+    console.warn("name claim failed", e);
+    return { ok: false, err: e.code === "permission-denied" ? "taken" : "net", code: e.code };
+  }
+}
+
+// Make sure the name saved in the game is the one registered to you.
+// If it's taken (or not allowed) the saved name is cleared so the game asks for a new one.
+async function ensure() {
+  const local = cleanName(window.getName && window.getName());
+  if (!local) return { ok: false, err: "none" };
+  if (regName === local) return { ok: true, name: local };
+  const r = await claim(local);
+  if (!r.ok && (r.err === "taken" || r.err === "invalid") && window.setName) window.setName("");
+  return r;
+}
+
 // ---- submit: daily/weekly +1 per kill, lifetime follows your saved score; one write at a time ----
 let chain = Promise.resolve();
-let lastErr = "", renameErr = ""; // shown on the leaderboard screen so failures aren't silent
+let lastErr = ""; // not shown on screen; failures go to the console
 function win(total) {
   chain = chain.then(async () => {
     try {
+      const reg = await ensure();
+      if (!reg.ok) { lastErr = "name: " + reg.err; return; }
+      const name = reg.name;
       const uid = await getUid();
-      const name = String((window.getName && window.getName()) || "???").trim().slice(0, 16) || "???";
       const ids = boardIds();
       const ref = id => doc(db, "boards", id, "entries", uid);
       const batch = writeBatch(db);
@@ -78,29 +131,6 @@ function win(total) {
       console.warn("leaderboard submit failed", e);
     }
   });
-}
-
-// ---- rename: updates your name on the current daily/weekly/lifetime boards ----
-// (older daily/weekly boards keep the name you had back then)
-async function rename(raw) {
-  const name = String(raw || "").trim().slice(0, 16);
-  if (!name) return;
-  try {
-    const uid = await getUid();
-    const errs = [];
-    await Promise.all(Object.values(boardIds()).map(async id => {
-      const ref = doc(db, "boards", id, "entries", uid);
-      try {
-        if ((await getDoc(ref)).exists()) await updateDoc(ref, { name }); // skip boards you aren't on yet
-      } catch (e) { errs.push(e.code || e.message || String(e)); }
-    }));
-    if (errs.length) { lastErr = "rename: " + errs[0]; console.warn("leaderboard rename failed", errs); }
-    else lastErr = "";
-  } catch (e) {
-    lastErr = "rename: " + (e.code || e.message || String(e));
-    console.warn("leaderboard rename failed", e);
-  }
-  if ($("lb").style.display !== "none") render();
 }
 
 // short tag from your unique id so same-named players can be told apart
@@ -157,4 +187,4 @@ $("lbD").onclick = () => { tab = "daily"; render(); };
 $("lbW").onclick = () => { tab = "weekly"; render(); };
 $("lbL").onclick = () => { tab = "lifetime"; render(); };
 
-window.LB = { win, rename, open: render };
+window.LB = { win, claim, ensure, open: render };
