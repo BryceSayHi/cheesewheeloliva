@@ -91,14 +91,12 @@ async function claim(raw) {
 }
 
 // Make sure the name saved in the game is the one registered to you.
-// If it's taken (or not allowed) the saved name is cleared so the game asks for a new one.
+// If it's taken (or not allowed) we just report that; the saved name is never erased (the game asks for a new one).
 async function ensure() {
   const local = cleanName(window.getName && window.getName());
   if (!local) return { ok: false, err: "none" };
   if (regName === local) return { ok: true, name: local };
-  const r = await claim(local);
-  if (!r.ok && (r.err === "taken" || r.err === "invalid") && window.setName) window.setName("");
-  return r;
+  return await claim(local);
 }
 
 // ---- submit: daily/weekly +1 per kill, lifetime follows your saved score; one write at a time ----
